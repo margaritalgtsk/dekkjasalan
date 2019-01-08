@@ -95,10 +95,8 @@
             $data = get_transient( 'redux-extensions-fetch' );
 
             if ( empty( $data ) ) {
-                $data = @wp_remote_retrieve_body( @wp_remote_get( 'http://reduxframework.com/wp-admin/admin-ajax.php?action=get_redux_extensions' ) );
-                
+                $data = json_decode( wp_remote_retrieve_body( wp_remote_get( 'http://reduxframework.com/wp-admin/admin-ajax.php?action=get_redux_extensions' ) ), true );
                 if ( ! empty( $data ) ) {
-                    $data = json_decode( $data, true );
                     set_transient( 'redux-extensions-fetch', $data, 24 * HOUR_IN_SECONDS );
                 }
             }

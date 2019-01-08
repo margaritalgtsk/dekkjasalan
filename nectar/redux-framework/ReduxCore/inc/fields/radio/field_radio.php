@@ -28,7 +28,6 @@
              */
             function render() {
 
-                /* nectar additon */
                 //upgrade proof
                 $old_options = get_option('salient');
                 global $salient_redux;
@@ -37,8 +36,6 @@
                 $fixed_ID = $this->field['id'];
                 $legacy_radio = (!empty($old_options[$fixed_ID])) ? $old_options[$fixed_ID] : '-';
                 $display_val = (isset($salient_redux[$this->field['id']]) || $legacy_radio == '-') ? $this->value : $legacy_radio;
-
-                /* nectar additon end */
 
                 if ( ! empty( $this->field['data'] ) && empty( $this->field['options'] ) ) {
                     if ( empty( $this->field['args'] ) ) {
@@ -55,9 +52,7 @@
                     foreach ( $this->field['options'] as $k => $v ) {
                         echo '<li>';
                         echo '<label for="' . $this->field['id'] . '_' . array_search( $k, array_keys( $this->field['options'] ) ) . '">';
-                        /* nectar additon */
                         echo '<input type="radio" class="radio ' . $this->field['class'] . '" id="' . $this->field['id'] . '_' . array_search( $k, array_keys( $this->field['options'] ) ) . '" name="' . $this->field['name'] . $this->field['name_suffix'] . '" value="' . $k . '" ' . checked( $display_val, $k, false ) . '/>';
-                        /* nectar additon end */
                         echo ' <span>' . $v . '</span>';
                         echo '</label>';
                         echo '</li>';

@@ -79,9 +79,9 @@ if ( !class_exists( 'Radium_Theme_Importer' ) ) {
 
       self::$instance = $this;
 
-      $this->theme_options_file = apply_filters( 'wbc_importer_options_file_location', $this->demo_files_path . $this->theme_options_file_name, $this->active_import );
-      $this->widgets            = apply_filters( 'wbc_importer_widget_file_location', $this->demo_files_path . $this->widgets_file_name, $this->active_import );
-      $this->content_demo       = apply_filters( 'wbc_importer_content_file_location', $this->demo_files_path . $this->content_demo_file_name, $this->active_import );
+      $this->theme_options_file = $this->demo_files_path . $this->theme_options_file_name;
+      $this->widgets            = $this->demo_files_path . $this->widgets_file_name;
+      $this->content_demo       = $this->demo_files_path . $this->content_demo_file_name;
 
       add_filter( 'add_post_metadata', array( $this, 'check_previous_meta' ), 10, 5 );
 
@@ -233,7 +233,7 @@ if ( !class_exists( 'Radium_Theme_Importer' ) ) {
           echo "The XML file containing the dummy content is not available or could not be read .. You might want to try to set the file permission to chmod 755.<br/>If this doesn't work please use the Wordpress importer and import the XML file (should be located in your download .zip: Sample Content folder) manually ";
 
         } else {
-          @set_time_limit(0);
+
           $wp_import = new WP_Import();
           $wp_import->fetch_attachments = true;
           $wp_import->import( $file );
@@ -253,7 +253,7 @@ if ( !class_exists( 'Radium_Theme_Importer' ) ) {
       // File exists?
       if ( ! file_exists( $file ) ) {
         wp_die(
-          __( 'Theme options Import file could not be found. Please try again.', 'salient' ),
+          __( 'Theme options Import file could not be found. Please try again.', 'radium' ),
           '',
           array( 'back_link' => true )
         );
@@ -273,14 +273,10 @@ if ( !class_exists( 'Radium_Theme_Importer' ) ) {
 
 
           update_option( $this->theme_option_name, $data );
-          
-          /*nectar addition*/
-          echo 'success';
-          /*nectar addition*/
       }
 
       do_action( 'wbc_importer_after_theme_options_import', $this->active_import, $this->demo_files_path );
-      
+
     }
 
     /**
@@ -332,7 +328,7 @@ if ( !class_exists( 'Radium_Theme_Importer' ) ) {
       // File exists?
       if ( ! file_exists( $file ) ) {
         wp_die(
-          __( 'Widget Import file could not be found. Please try again.', 'salient' ),
+          __( 'Widget Import file could not be found. Please try again.', 'radium' ),
           '',
           array( 'back_link' => true )
         );
@@ -406,7 +402,7 @@ if ( !class_exists( 'Radium_Theme_Importer' ) ) {
           $sidebar_available = false;
           $use_sidebar_id = 'wp_inactive_widgets'; // add to inactive if sidebar does not exist in theme
           $sidebar_message_type = 'error';
-          $sidebar_message = __( 'Sidebar does not exist in theme (using Inactive)', 'salient' );
+          $sidebar_message = __( 'Sidebar does not exist in theme (using Inactive)', 'radium' );
         }
 
         // Result for sidebar
@@ -428,7 +424,7 @@ if ( !class_exists( 'Radium_Theme_Importer' ) ) {
           if ( ! $fail && ! isset( $available_widgets[$id_base] ) ) {
             $fail = true;
             $widget_message_type = 'error';
-            $widget_message = __( 'Site does not support widget', 'salient' ); // explain why widget not imported
+            $widget_message = __( 'Site does not support widget', 'radium' ); // explain why widget not imported
           }
 
           // Filter to modify settings before import
@@ -451,7 +447,7 @@ if ( !class_exists( 'Radium_Theme_Importer' ) ) {
 
                 $fail = true;
                 $widget_message_type = 'warning';
-                $widget_message = __( 'Widget already exists', 'salient' ); // explain why widget not imported
+                $widget_message = __( 'Widget already exists', 'radium' ); // explain why widget not imported
 
                 break;
 
@@ -500,17 +496,17 @@ if ( !class_exists( 'Radium_Theme_Importer' ) ) {
             // Success message
             if ( $sidebar_available ) {
               $widget_message_type = 'success';
-              $widget_message = __( 'Imported', 'salient' );
+              $widget_message = __( 'Imported', 'radium' );
             } else {
               $widget_message_type = 'warning';
-              $widget_message = __( 'Imported to Inactive', 'salient' );
+              $widget_message = __( 'Imported to Inactive', 'radium' );
             }
 
           }
 
           // Result for widget instance
           $results[$sidebar_id]['widgets'][$widget_instance_id]['name'] = isset( $available_widgets[$id_base]['name'] ) ? $available_widgets[$id_base]['name'] : $id_base; // widget name or ID if name not available (not supported by site)
-          $results[$sidebar_id]['widgets'][$widget_instance_id]['title'] = $widget->title ? $widget->title : __( 'No Title', 'salient' ); // show "No Title" if widget instance is untitled
+          $results[$sidebar_id]['widgets'][$widget_instance_id]['title'] = $widget->title ? $widget->title : __( 'No Title', 'radium' ); // show "No Title" if widget instance is untitled
           $results[$sidebar_id]['widgets'][$widget_instance_id]['message_type'] = $widget_message_type;
           $results[$sidebar_id]['widgets'][$widget_instance_id]['message'] = $widget_message;
 
@@ -520,9 +516,6 @@ if ( !class_exists( 'Radium_Theme_Importer' ) ) {
 
       // Hook after import
       do_action( 'radium_theme_import_widget_after_import' );
-      /*nectar addition*/
-      echo 'success';
-      /*nectar addition*/
 
       // Return results
       return apply_filters( 'radium_theme_import_widget_results', $results );

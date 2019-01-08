@@ -85,12 +85,9 @@ if ( !class_exists( 'Radium_Theme_Demo_Data_Importer' ) ) {
 			$this->ReduxParent = $redux_instance;
 
 			$this->active_import = $this->parent->active_import;
+
 			$this->active_import_id = $this->parent->active_import_id;
-			
-			$this->nectar_import_demo_content = $this->parent->nectar_import_demo_content;
-			$this->nectar_import_theme_option_settings = $this->parent->nectar_import_theme_option_settings;
-			$this->nectar_import_demo_widgets = $this->parent->nectar_import_demo_widgets;
-			
+
 			$this->initSettings();
 
 			self::$instance = $this;
@@ -109,30 +106,15 @@ if ( !class_exists( 'Radium_Theme_Demo_Data_Importer' ) ) {
 			if ( isset( $this->active_import_id ) && !empty( $this->active_import_id ) ) {
 
 				$demo_import_array             = $this->parent->wbc_import_files[$this->active_import_id];
-				
+
 				$this->content_demo_file_name  = ( isset( $demo_import_array['content_file'] ) ) ? $demo_import_array['content_file'] : '';
-			  //chosen to skip in import
-				if($this->nectar_import_demo_content == 'false') {
-					$this->content_demo_file_name  = '';
-				}
-				
-				
+
 				$this->demo_files_path         = ( isset( $this->demo_files_path ) && !empty( $this->demo_files_path ) ) ? $this->demo_files_path.$demo_import_array['directory'].'/' : '';
 
-
 				$this->theme_options_file_name = ( isset( $demo_import_array['theme_options'] ) ) ? $demo_import_array['theme_options'] : '';
-				//chosen to skip in import
-				if($this->nectar_import_theme_option_settings == 'false') {
-					$this->theme_options_file_name  = '';
-				}
-				
-				
+
 				$this->widgets_file_name       = ( isset( $demo_import_array['widgets'] ) ) ? $demo_import_array['widgets'] : '';
-				//chosen to skip in import
-				if($this->nectar_import_demo_widgets == 'false') {
-					$this->widgets_file_name = '';
-				}
-				
+
 				$this->theme_option_name       = $this->ReduxParent->args['opt_name'];
 			}
 

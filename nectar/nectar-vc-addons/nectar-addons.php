@@ -1,33 +1,30 @@
 <?php 
 
-global $nectar_options;
+global $options;
+$vc_is_wp_version_3_6_more = version_compare(preg_replace('/^([\d\.]+)(\-.*$)/', '$1', get_bloginfo('version')), '3.6') >= 0;
 
-if(!function_exists('nectar_set_vc_as_theme')) {
-	function nectar_set_vc_as_theme() {
+function nectar_set_vc_as_theme() {
 
-		vc_set_as_theme($disable_updater = true);
-		$template_directory = get_template_directory();
+	vc_set_as_theme($disable_updater = true);
+	$template_directory = get_template_directory();
 
-		if(defined( 'SALIENT_VC_ACTIVE')) {
-		    $child_dir = $template_directory . '/nectar/nectar-vc-addons/vc_templates';
-		    $parent_dir = $template_directory . '/nectar/nectar-vc-addons/vc_templates';
+	if(defined( 'SALIENT_VC_ACTIVE')) {
+	    $child_dir = $template_directory . '/nectar/nectar-vc-addons/vc_templates';
+	    $parent_dir = $template_directory . '/nectar/nectar-vc-addons/vc_templates';
 
-		    vc_set_shortcodes_templates_dir($parent_dir);
-		    vc_set_shortcodes_templates_dir($child_dir);
-		} else {
+	    vc_set_shortcodes_templates_dir($parent_dir);
+	    vc_set_shortcodes_templates_dir($child_dir);
+	} else {
 
-		    $child_dir = $template_directory . '/nectar/nectar-vc-addons/vc_templates';
-		    $parent_dir = $template_directory . '/nectar/nectar-vc-addons/vc_templates';
-		    vc_set_shortcodes_templates_dir($parent_dir);
-		    vc_set_shortcodes_templates_dir($child_dir);
-		}
-		
-		//only allow frontend editor when using Salient WPBakery that supports it
-		if ( version_compare( WPB_VC_VERSION, '5.5.4', '<=' ) ) {
-			vc_disable_frontend();
-		} 
-
+	    $child_dir = $template_directory . '/nectar/nectar-vc-addons/vc_templates';
+	    $parent_dir = $template_directory . '/nectar/nectar-vc-addons/vc_templates';
+	    vc_set_shortcodes_templates_dir($parent_dir);
+	    vc_set_shortcodes_templates_dir($child_dir);
 	}
+
+
+	vc_disable_frontend();
+
 }
 
 add_action('vc_before_init', 'nectar_set_vc_as_theme');
@@ -35,12 +32,15 @@ add_action('vc_before_init', 'nectar_set_vc_as_theme');
 
 
 
-add_filter( 'vc_load_default_templates', 'nectar_custom_template_modify_array' ); // Hook in
-function nectar_custom_template_modify_array( $data ) {
+add_filter( 'vc_load_default_templates', 'my_custom_template_modify_array' ); // Hook in
+function my_custom_template_modify_array( $data ) {
     return array(); 
 }
 
-vc_remove_element("vc_section");
+/*
+vc_remove_element("vc_row");
+vc_remove_element("vc_column");
+vc_remove_element("vc_column_inner");*/
 vc_remove_element("vc_button");
 vc_remove_element("vc_button2");
 vc_remove_element("vc_posts_slider");
@@ -67,6 +67,7 @@ vc_remove_element("vc_basic_grid");
 vc_remove_element("vc_round_chart");
 vc_remove_element("vc_line_chart");
 vc_remove_element("vc_cta");
+vc_remove_element("vc_icon");
 vc_remove_element("vc_media_grid");
 vc_remove_element("vc_masonry_media_grid");
 vc_remove_element("vc_masonry_grid");
@@ -81,10 +82,12 @@ vc_remove_element("vc_tta_accordion");
 vc_remove_element("vc_tta_pageable");
 
 vc_remove_element("vc_empty_space");
+vc_remove_element("vc_custom_heading");
 vc_remove_element("vc_images_carousel");
 vc_remove_element("vc_wp_archives");
 vc_remove_element("vc_wp_calendar");
 vc_remove_element("vc_wp_categories");
+vc_remove_element("vc_wp_custommenu");
 vc_remove_element("vc_wp_links");
 vc_remove_element("vc_wp_meta");
 vc_remove_element("vc_wp_pages");
@@ -96,14 +99,21 @@ vc_remove_element("vc_wp_tagcloud");
 vc_remove_element("vc_wp_text");
 
 //remove WC elements
-function salient_vc_remove_woocommerce() {
-    if ( class_exists( 'woocommerce' ) ) {
+function your_name_vc_remove_woocommerce() {
+    if ( is_plugin_active( 'woocommerce/woocommerce.php' ) ) {
+        //vc_remove_element("woocommerce_cart");
+		//vc_remove_element("woocommerce_checkout");
+		//vc_remove_element("woocommerce_order_tracking");
+		//vc_remove_element("woocommerce_my_account");
 		vc_remove_element("recent_products");
 		vc_remove_element("featured_products");
 		vc_remove_element("product");
 		vc_remove_element("products");
+		//vc_remove_element("add_to_cart");
 		vc_remove_element("add_to_cart_url");
 		vc_remove_element("product_page");
+		//vc_remove_element("product_category");
+		//vc_remove_element("product_categories");
 		vc_remove_element("sale_products");
 		vc_remove_element("best_selling_products");
 		vc_remove_element("top_rated_products");
@@ -111,201 +121,93 @@ function salient_vc_remove_woocommerce() {
     }
 }
 // Hook for admin editor.
-add_action( 'vc_build_admin_page', 'salient_vc_remove_woocommerce', 11 );
-
-
-
-
-if ( !function_exists( 'nectar_vc_navbar_mod' ) ) {
-	
-	function nectar_vc_navbar_mod($list) {
-
-			if ( is_array( $list ) ) {
-				
-				//remove default template button
-				foreach($list as $key => $button) {
-						if(isset($button[0]) && $button[0] == 'templates') {
-							 unset($list[$key]);
-						}
-						
-				}
-				
-				//add new template buttons
-				$list[] = array( 'salient_studio', nectar_generate_salient_studio_button() );
-				$list[] = array( 'user_templates', nectar_generate_user_template_button() );
-			}
-				
-			return $list;
-	}
-	
-}
-
-if ( !function_exists( 'nectar_generate_salient_studio_button' ) ) {
-	function nectar_generate_salient_studio_button() {
-		return '<li><a href="javascript:;" class="vc_icon-btn vc_templates-button salient-studio-templates"  id="vc_templates-editor-button" title="'
-					 . esc_html__('Salient studio template library', 'salient' ) . '"><i class="vc-composer-icon vc-c-icon-add_template"></i> <span>'. esc_html__('Salient Templates','salient'). '</span></a></li>';
-	}
-}
-
-if ( !function_exists( 'nectar_generate_user_template_button' ) ) {
-	function nectar_generate_user_template_button() {
-		return '<li><a href="javascript:;" class="vc_icon-btn vc_templates-button user-templates"  id="vc_templates-editor-button" title="'
-					 . esc_html__('My templates', 'salient' ) . '"><i class="vc-composer-icon vc-c-icon-add_template"></i> <span>'. esc_html__('My Templates','salient'). '</span></a></li>';
-	}
-}
-
-add_filter('vc_nav_controls','nectar_vc_navbar_mod');
-add_filter('vc_nav_front_controls','nectar_vc_navbar_mod');
-
-
-
-
-
+add_action( 'vc_build_admin_page', 'your_name_vc_remove_woocommerce', 11 );
 
 //only load shortcode logic on front when needed
 $is_admin = is_admin();
 
 
-global $nectar_get_template_directory_uri;
+function nectar_has_shortcode( $shortcode = NULL ) {
 
+    // false because we have to search through the post content first
+    //$found = false;
 
-function nectar_select_color_styles() {
-	global $nectar_options;
+    // if no short code was provided, return false
+   // if ( ! $shortcode ) {
+    //    return $found;
+    //}
+    
+    // check the post content for the short code
+    //if ( stripos( $post_to_check, '[' . $shortcode) !== FALSE || stripos( $portfolio_extra_content, '[' . $shortcode) !== FALSE || $is_admin) {
+        // we have found the short code
+   //     $found = TRUE;
+   // }
 
-	$nectar_accent_color = (!empty($nectar_options["accent-color"])) ? $nectar_options["accent-color"] : 'transparent';
-	$nectar_extra_color_1 = (!empty($nectar_options["extra-color-1"])) ? $nectar_options["extra-color-1"] : 'transparent';
-	$nectar_extra_color_2 = (!empty($nectar_options["extra-color-2"])) ? $nectar_options["extra-color-2"] : 'transparent';
-	$nectar_extra_color_3 = (!empty($nectar_options["extra-color-3"])) ? $nectar_options["extra-color-3"] : 'transparent';
-
-	$nectar_color_css = '.vc_edit-form-tab .chosen-container .chosen-results li.Default:before, .vc_edit-form-tab .chosen-container .chosen-results li.default:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"].Default + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"].default + .chosen-container > a:before { background: linear-gradient(to right, #444 49%, #fff 51%); } 
-	.vc_edit-form-tab .chosen-container .chosen-results li[class*="Accent-Color"]:before, .vc_edit-form-tab .chosen-container .chosen-results li.Default-Accent-Color:before, .vc_edit-form-tab .chosen-container .chosen-results li[class*="accent-color"]:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"].Default-Accent-Color + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"][class*="Accent-Color"] + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"][class*="accent-color"] + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="cta_button_style"].accent-color + .chosen-container > a:before { background-color: '.$nectar_accent_color.'; } 
-    .vc_edit-form-tab .chosen-container .chosen-results li[class*="Extra-Color-1"]:before, .vc_edit-form-tab .chosen-container .chosen-results li[class*="extra-color-1"]:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"][class*="Extra-Color-1"] + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"][class*="extra-color-1"] + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="cta_button_style"].extra-color-1 + .chosen-container > a:before { background-color: '.$nectar_extra_color_1.'; }
-    .vc_edit-form-tab .chosen-container .chosen-results li[class*="Extra-Color-2"]:before, .vc_edit-form-tab .chosen-container .chosen-results li[class*="extra-color-2"]:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"][class*="Extra-Color-2"] + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"][class*="extra-color-2"] + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="cta_button_style"].extra-color-2 + .chosen-container > a:before { background-color: '.$nectar_extra_color_2.'; }
-    .vc_edit-form-tab .chosen-container .chosen-results li[class*="Extra-Color-3"]:before, .vc_edit-form-tab .chosen-container .chosen-results li[class*="extra-color-3"]:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"][class*="Extra-Color-3"] + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"][class*="extra-color-3"] + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="cta_button_style"].extra-color-3 + .chosen-container > a:before { background-color: '.$nectar_extra_color_3.'; }';
-
-	if( !empty($nectar_options["extra-color-gradient"]) && $nectar_options["extra-color-gradient"]['to'] && $nectar_options["extra-color-gradient"]['from']) {
-		$nectar_gradient_1_from = $nectar_options["extra-color-gradient"]['from'];
-		$nectar_gradient_1_to = $nectar_options["extra-color-gradient"]['to'];
-
-		$nectar_color_css .= '.vc_edit-form-tab .chosen-container .chosen-results li.extra-color-gradient-1:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"].extra-color-gradient-1 + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="button_color"].extra-color-gradient-1 + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name="icon_color"].extra-color-gradient-1 + .chosen-container > a:before {  background: linear-gradient(to right, '.$nectar_gradient_1_from.', '.$nectar_gradient_1_to.'); }';
-	}
-
-	if( !empty($nectar_options["extra-color-gradient-2"]) && $nectar_options["extra-color-gradient-2"]['to'] && $nectar_options["extra-color-gradient-2"]['from']) {
-		$nectar_gradient_2_from = $nectar_options["extra-color-gradient-2"]['from'];
-		$nectar_gradient_2_to = $nectar_options["extra-color-gradient-2"]['to'];
-
-		$nectar_color_css .= '.vc_edit-form-tab .chosen-container .chosen-results li.extra-color-gradient-2:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="color"].extra-color-gradient-2 + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name*="button_color"].extra-color-gradient-2 + .chosen-container > a:before, .vc_edit-form-tab .vc_shortcode-param[data-param_type="dropdown"] select[name="icon_color"].extra-color-gradient-2 + .chosen-container > a:before {  background: linear-gradient(to right, '.$nectar_gradient_2_from.', '.$nectar_gradient_2_to.'); }';
-	}
-
-   
-    wp_add_inline_style( 'nectar_vc', $nectar_color_css );
+    // return our final results
+   // return $found;
+	return true;
 }
-add_action( 'admin_enqueue_scripts', 'nectar_select_color_styles' );
 
+// Create multi dropdown param type
+add_shortcode_param( 'dropdown_multi', 'dropdown_multi_settings_field' );
+function dropdown_multi_settings_field( $param, $value ) {
 
+	 $param_line = '';
+	 $param_line .= '<select multiple name="'. esc_attr( $param['param_name'] ).'" class="wpb_vc_param_value wpb-input wpb-select '. esc_attr( $param['param_name'] ).' '. esc_attr($param['type']).'">';
+                foreach ( $param['value'] as $text_val => $val ) {
+                    if ( is_numeric($text_val) && (is_string($val) || is_numeric($val)) ) {
+                        $text_val = $val;
+                    }
+                    $text_val = __($text_val, "js_composer");
+                    $selected = '';
 
+                    if(!is_array($value)) {
+                    	$param_value_arr = explode(',',$value);
+                    } else {
+                    	$param_value_arr = $value;
+                    }
+					
+                    if ($value!=='' && in_array($val, $param_value_arr)) {
+                        $selected = ' selected="selected"';
+                    }
+                    $param_line .= '<option class="'.$val.'" value="'.$val.'"'.$selected.'>'.$text_val.'</option>';
+                }
+                $param_line .= '</select>';
+
+   return  $param_line;
+}
+
+add_shortcode_param( 'fws_image', 'fws_image_settings_field' );
+function fws_image_settings_field( $param, $value ) {
+		$param_line = '';
+		$param_line .= '<input type="hidden" class="wpb_vc_param_value gallery_widget_attached_images_ids '.esc_attr($param['param_name']).' '.esc_attr($param['type']).'" name="'.esc_attr($param['param_name']).'" value="'.esc_attr($value).'"/>';
+        //$param_line .= '<a class="button gallery_widget_add_images" href="#" use-single="true" title="'.__('Add image', "js_composer").'">'.__('Add image', "js_composer").'</a>';
+        $param_line .= '<div class="gallery_widget_attached_images">';
+        $param_line .= '<ul class="gallery_widget_attached_images_list">';
+	
+		if(strpos($value, "http://") !== false || strpos($value, "https://") !== false) {
+			//$param_value = fjarrett_get_attachment_id_by_url($param_value);
+			$param_line .= '<li class="added">
+				<img src="'. esc_attr($value) .'" />
+				<a href="#" class="icon-remove"></a>
+			</li>';
+		} else {
+			$param_line .= ($value != '') ? fieldAttachedImages(explode(",", esc_attr($value))) : '';
+		}
+		
+        
+        $param_line .= '</ul>';
+        $param_line .= '</div>';
+        $param_line .= '<div class="gallery_widget_site_images">';
+        // $param_line .= siteAttachedImages(explode(",", $param_value));
+        $param_line .= '</div>';
+        $param_line .= '<a class="gallery_widget_add_images" href="#" use-single="true" title="'.__('Add image', "js_composer").'">'.__('Add image', "js_composer").'</a>';//class: button
+        //$param_line .= '<div class="wpb_clear"></div>';
+
+        return $param_line;
+}
 
 if(function_exists('vc_add_shortcode_param')) {
-
-	// Create multi dropdown param type
-	vc_add_shortcode_param( 'dropdown_multi', 'dropdown_multi_settings_field', get_template_directory_uri().'/nectar/nectar-vc-addons/js/backend-edit-form-bulk.js' );
-	function dropdown_multi_settings_field( $param, $value ) {
-
-		 $param_line = '';
-		 $param_line .= '<select multiple name="'. esc_attr( $param['param_name'] ).'" class="wpb_vc_param_value wpb-input wpb-select '. esc_attr( $param['param_name'] ).' '. esc_attr($param['type']).'">';
-	                foreach ( $param['value'] as $text_val => $val ) {
-	                    if ( is_numeric($text_val) && (is_string($val) || is_numeric($val)) ) {
-	                        $text_val = $val;
-	                    }
-	                    $text_val = __($text_val, "js_composer");
-	                    $selected = '';
-
-	                    if(!is_array($value)) {
-	                    	$param_value_arr = explode(',',$value);
-	                    } else {
-	                    	$param_value_arr = $value;
-	                    }
-						
-	                    if ($value!=='' && in_array($val, $param_value_arr)) {
-	                        $selected = ' selected="selected"';
-	                    }
-	                    $param_line .= '<option class="'.$val.'" value="'.$val.'"'.$selected.'>'.$text_val.'</option>';
-	                }
-	                $param_line .= '</select>';
-
-	   return  $param_line;
-	}
-
-	vc_add_shortcode_param( 'fws_image', 'fws_image_settings_field' );
-	function fws_image_settings_field( $param, $value ) {
-			$param_line = '';
-			$param_line .= '<input type="hidden" class="wpb_vc_param_value gallery_widget_attached_images_ids '.esc_attr($param['param_name']).' '.esc_attr($param['type']).'" name="'.esc_attr($param['param_name']).'" value="'.esc_attr($value).'"/>';
-	        //$param_line .= '<a class="button gallery_widget_add_images" href="#" use-single="true" title="'.esc_html__('Add image', "js_composer").'">'.esc_html__('Add image', "js_composer").'</a>';
-	        $param_line .= '<div class="gallery_widget_attached_images">';
-	        $param_line .= '<ul class="gallery_widget_attached_images_list">';
-		
-			if(strpos($value, "http://") !== false || strpos($value, "https://") !== false) {
-				//$param_value = fjarrett_get_attachment_id_by_url($param_value);
-				$param_line .= '<li class="added">
-					<img src="'. esc_attr($value) .'" />
-					<a href="#" class="vc_icon-remove"><i class="vc-composer-icon vc-c-icon-close"></i></a>
-				</li>';
-			} else {
-				$param_line .= ($value != '') ? fieldAttachedImages(explode(",", esc_attr($value))) : '';
-			}
-			
-	        
-	        $param_line .= '</ul>';
-	        $param_line .= '</div>';
-	        $param_line .= '<div class="gallery_widget_site_images">';
-	        // $param_line .= siteAttachedImages(explode(",", $param_value));
-	        $param_line .= '</div>';
-	        $param_line .= '<a class="gallery_widget_add_images" href="#" use-single="true" title="'.esc_html__('Add image', "js_composer").'">'.esc_html__('Add image', "js_composer").'</a>';//class: button
-	        //$param_line .= '<div class="wpb_clear"></div>';
-
-	        return $param_line;
-	}
-
-
-	vc_add_shortcode_param( 'nectar_radio_image', 'nectar_radio_images_settings_field' );
-	function nectar_radio_images_settings_field( $param, $value ) {
-			$rnd_id = uniqid();
-			$options = isset($param['options']) ? $param['options'] : '';
-
-			$param_line = '';
-			$param_line .= '<input type="hidden" id="nectar-radio-image-'.$rnd_id.'" class="wpb_vc_param_value '.esc_attr($param['param_name']).' '.esc_attr($param['type']).'" name="'.esc_attr($param['param_name']).'" value="'.esc_attr($value).'"/>';
-	        $param_line .= '<div class="nectar-radio-image" data-grp-id="' . $rnd_id . '">';
-	        $param_line .= '<ul class="nectar_radio_images_list">';
-		
-			foreach($options as $k => $v) {
-
-				foreach($v as $name => $image_src) {
-
-					if($value == $k) {
-						$checked = 'checked';
-					}
-					else {
-						$checked = '';
-					}
-
-					$param_line .= '<li><label>
-						<input type="radio" class="n_radio_image_val" value="'. $k .'" name="n_radio_image_' . $rnd_id . '" ' . $checked . ' />
-						<span class="n_radio_image_src"><img src="'. $image_src .'" alt="'. $name.'" /></span>
-						<span class="n_radio_image_title">'.$name.'</span>
-					</label></li>';
-				}
-
-				
-			}
-			
-	        
-	        $param_line .= '</ul>';
-	        $param_line .= '</div>';
-
-	        return $param_line;
-	}
-
-
 	vc_add_shortcode_param( 'hotspot_image_preview', 'hotspot_image_preview_field' );
 	function hotspot_image_preview_field( $settings, $value ) {
 	   
@@ -323,16 +225,13 @@ add_action('vc_before_init', 'nectar_custom_maps');
 function nectar_custom_maps() {
 
 	$vc_is_wp_version_3_6_more = version_compare(preg_replace('/^([\d\.]+)(\-.*$)/', '$1', get_bloginfo('version')), '3.6') >= 0;
-	global $nectar_options;
+	global $options;
 	$is_admin = is_admin();
-	$nectar_template_dir = get_template_directory();
-	$nectar_get_template_directory_uri = get_template_directory_uri();
 
 	vc_map( array(
 		'name' => __( 'Row', 'js_composer' ),
 		'base' => 'vc_row',
 		'is_container' => true,
-		'weight' => 11,
 		'icon' => 'icon-wpb-row',
 		'show_settings_on_create' => false,
 		'category' => __( 'Structure', 'js_composer' ),
@@ -451,30 +350,30 @@ function nectar_custom_maps() {
 			),
 
 			array(
-				'type' => 'checkbox',
-				'heading' => __( 'Full height row?', 'js_composer' ),
-				'param_name' => 'full_height',
-				'description' => __( 'If checked row will be set to full height.', 'js_composer' ),
-				'value' => array( __( 'Yes', 'js_composer' ) => 'yes' ),
+				"type" => "checkbox",
+				"class" => "",
+				"heading" => "Parallax Background",
+				"value" => array("Enable Parallax Background?" => "true" ),
+				"param_name" => "parallax_bg",
+				"description" => "",
+				"dependency" => Array('element' => "bg_image", 'not_empty' => true)
 			),
 
 			array(
-				'type' => 'dropdown',
-				'heading' => __( 'Columns position', 'js_composer' ),
-				'param_name' => 'columns_placement',
-				'value' => array(
-					__( 'Middle', 'js_composer' ) => 'middle',
-					__( 'Top', 'js_composer' ) => 'top',
-					__( 'Bottom', 'js_composer' ) => 'bottom',
-					__( 'Stretch', 'js_composer' ) => 'stretch',
+				"type" => "dropdown",
+				"class" => "",
+				"description" => "The faster you choose, the closer your BG will match the users scroll speed",
+				"heading" => "Parallax Background Speed",
+				"param_name" => "parallax_bg_speed",
+				'save_always' => true,
+				"value" => array(
+					 "Slow" => "slow",
+			  		 "Medium" => "medium",
+			  		 "Fast" => "fast",
+			  		 "Fixed" => "fixed"
 				),
-				'description' => __( 'Select columns position within row.', 'js_composer' ),
-				'dependency' => array(
-					'element' => 'full_height',
-					'not_empty' => true,
-				),
+				"dependency" => Array('element' => "parallax_bg", 'not_empty' => true)
 			),
-
 
 			array(
 				"type" => "colorpicker",
@@ -495,7 +394,7 @@ function nectar_custom_maps() {
 
 			 array(
 				  "type" => "dropdown",
-				  "heading" => esc_html__("Scene Positioning", "js_composer"),
+				  "heading" => __("Scene Positioning", "js_composer"),
 				  "param_name" => "scene_position",
 				  'save_always' => true,
 				  "value" => array(
@@ -503,7 +402,7 @@ function nectar_custom_maps() {
 			  		 "Top" => "top",
 			  		 "Bottom" => "bottom"
 					),
-				  "description" => esc_html__("Select your desired scene alignment within your row", "js_composer")
+				  "description" => __("Select your desired scene alignment within your row", "js_composer")
 			),
 
 			 array(
@@ -636,6 +535,16 @@ function nectar_custom_maps() {
 			),
 
 			array(
+				"type" => "checkbox",
+				"class" => "",
+				"heading" => "Mute Video",
+				"value" => array("Do you want to mute the video (recommended)" => "true" ),
+				"param_name" => "video_mute",
+				"description" => "",
+				"dependency" => Array('element' => "video_bg", 'value' => array('use_video'))
+			),
+
+			array(
 				"type" => "textfield",
 				"class" => "",
 				"heading" => "Youtube Video URL",
@@ -739,36 +648,7 @@ function nectar_custom_maps() {
 				"param_name" => "bottom_padding",
 				"description" => "Don't include \"px\" in your string. e.g \"40\" - However you can also use a percent value in which case a \"%\" would be needed at the end e.g. \"10%\""
 			),
-			
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"heading" => "Translate Y",
-				"value" => "",
-				"edit_field_class" => "col-md-6",
-				"param_name" => "translate_y",
-				"description" => ""
-			),
 
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"heading" => "Translate X",
-				"value" => "",
-				"edit_field_class" => "col-md-6",
-				"param_name" => "translate_x",
-				"description" => ""
-			),
-			
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"heading" => "Z-Index",
-				"param_name" => "zindex",
-				"description" => "If you want to set a custom stacking order on this row, enter it here. Can be useful when overlapping elements from other rows with negative margins/translates.",
-				"value" => ""
-			),
-			
 			array(
 				"type" => "textfield",
 				"class" => "",
@@ -864,123 +744,7 @@ function nectar_custom_maps() {
 					"Very Heavy" => "0.95",
 					"Solid" => '1'
 				)
-			),
-
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				"group" => "Shape Divider",
-				"heading" => "Enable Shape Divider",
-				"value" => array("Yes, please" => "true" ),
-				"param_name" => "enable_shape_divider",
-				"description" => ""
-			),
-			array(
-				"type" => "nectar_radio_image",
-				"class" => "",
-				'save_always' => true,
-				"heading" => "Shape Type",
-				"param_name" => "shape_type",
-				"group" => "Shape Divider",
-				"options" => array(
-					"curve" => array( esc_html__('Curve', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/curve_down.jpg"),
-					'fan' => array( esc_html__('Fan', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/fan.jpg"),
-					'curve_opacity' => array( esc_html__('Curve Opacity', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/curve_opacity.jpg"),
-					"mountains" => array( esc_html__('Mountains', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/mountains.jpg"),
-					'curve_asym' => array( esc_html__('Curve Asym.', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/curve_asym.jpg"),
-					'curve_asym_2' => array( esc_html__('Curve Asym. Alt', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/curve_asym_2.jpg"),
-					"tilt" => array( esc_html__('Tilt', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/tilt.jpg"),
-					"tilt_alt" => array( esc_html__('Tilt Alt', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/tilt_alt.jpg"),
-					"triangle" => array( esc_html__('Triangle', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/triangle.jpg"),
-					'waves' => array( esc_html__('Waves', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/waves_no_opacity.jpg"),
-					'waves_opacity' => array( esc_html__('Waves Opacity', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/waves.jpg"),
-					'waves_opacity_alt' => array( esc_html__('Waves Opacity 2', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/waves_opacity.jpg"),
-					'clouds' => array( esc_html__('Clouds', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/clouds.jpg"),
-					"speech" => array( esc_html__('Speech', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/speech.jpg"),
-					"straight_section" => array( esc_html__('Straight Section', 'salient') => $nectar_get_template_directory_uri."/nectar/nectar-vc-addons/img/shape_dividers/straight_section.jpg")
-				),
-			),
-			array(
-				"type" => "colorpicker",
-				"class" => "",
-				"heading" => "Shape Divider Color",
-				"param_name" => "shape_divider_color",
-				"value" => "",
-				"group" => "Shape Divider",
-				"description" => ""
-			),
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'save_always' => true,
-				"heading" => "Shape Divider Position",
-				"param_name" => "shape_divider_position",
-				"group" => "Shape Divider",
-				"value" => array(
-					"Bottom" => "bottom",
-					"Top" => "top",
-					"Bottom & Top" => 'both'
-				),
-			),
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"group" => "Shape Divider",
-				"heading" => "Shape Divider Height",
-				"param_name" => "shape_divider_height",
-				"value" => "",
-				"description" => "Enter an optional custom height for your shape divider in pixels without the \"px\", e.g. 50"
-			),
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				"group" => "Shape Divider",
-				"heading" => "Bring to front?",
-				"value" => array("Yes, please" => "true" ),
-				"param_name" => "shape_divider_bring_to_front",
-				"description" => "This will bring the shape divider to the top layer, placing it on top of any content it intersects/"
-			),
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'save_always' => true,
-				"heading" => "Background Image Animation",
-				"param_name" => "bg_image_animation",
-				"group" => "Animation",
-				"value" => array(
-					"None" => "none",
-					"Fade In" => "fade-in",
-					"Zoom Out" => 'zoom-out',
-					"Zoom Out Slowly" => 'zoom-out-slow'
-				),
-			),
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				"heading" => "Parallax Background Image Scroll",
-				"value" => array("Enable Parallax Background?" => "true" ),
-				"param_name" => "parallax_bg",
-				"description" => "This will cause the background image on your row to scroll at a different speed than the content",
-				"group" => "Animation"
-			),
-
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				"description" => "The faster you choose, the closer your BG will match the users scroll speed",
-				"heading" => "Parallax Background Image Speed",
-				"param_name" => "parallax_bg_speed",
-				'save_always' => true,
-				"value" => array(
-					 "Slow" => "slow",
-						 "Medium" => "medium",
-						 "Fast" => "fast",
-						 "Fixed" => "fixed"
-				),
-				"group" => "Animation",
-				"dependency" => Array('element' => "parallax_bg", 'not_empty' => true)
-			),
-
+			)
 		
 		),
 		'js_view' => 'VcRowView'
@@ -989,7 +753,7 @@ function nectar_custom_maps() {
 
 
 
-	if(!empty($nectar_options['header-inherit-row-color']) && $nectar_options['header-inherit-row-color'] == '1') {
+	if(!empty($options['header-inherit-row-color']) && $options['header-inherit-row-color'] == '1') {
 		vc_add_param("vc_row", array(
 			"type" => "checkbox",
 			"class" => "",
@@ -1003,10 +767,10 @@ function nectar_custom_maps() {
 
 	vc_add_param("vc_column_text", array(
       "type" => "textfield",
-      "heading" => esc_html__("Max Width", "js_composer"),
+      "heading" => __("Max Width", "js_composer"),
       "param_name" => "max_width",
       "admin_label" => false,
-      "description" => esc_html__("Optionally enter your desired max width in pixels without the \"px\", e.g. 200", "js_composer")
+      "description" => __("Optionally enter your desired max width in pixels with the \"px\", e.g. 200", "js_composer")
     ));
 
 
@@ -1023,11 +787,7 @@ function nectar_custom_maps() {
 		__( '9 columns - 3/4', 'js_composer' ) => '3/4',
 		__( '10 columns - 5/6', 'js_composer' ) => '5/6',
 		__( '11 columns - 11/12', 'js_composer' ) => '11/12',
-		__( '12 columns - 1/1', 'js_composer' ) => '1/1',
-		__( '20% - 1/5', 'js_composer' ) => '1/5',
-		__( '40% - 2/5', 'js_composer' ) => '2/5',
-		__( '60% - 3/5', 'js_composer' ) => '3/5',
-		__( '80% - 4/5', 'js_composer' ) => '4/5'
+		__( '12 columns - 1/1', 'js_composer' ) => '1/1'
 	);
 
 	vc_map( array(
@@ -1036,7 +796,56 @@ function nectar_custom_maps() {
 		'is_container' => true,
 		'content_element' => false,
 		'params' => array(
-	
+			array(
+				"type" => "checkbox",
+				"class" => "",
+				"heading" => "Enable Animation",
+				"value" => array("Enable Column Animation?" => "true" ),
+				"param_name" => "enable_animation",
+				"description" => ""
+			),
+
+			array(
+				"type" => "dropdown",
+				"class" => "",
+				"heading" => "Animation",
+				"param_name" => "animation",
+				'save_always' => true,
+				"value" => array(
+					 "None" => "none",
+				     "Fade In" => "fade-in",
+			  		 "Fade In From Left" => "fade-in-from-left",
+			  		 "Fade In Right" => "fade-in-from-right",
+			  		 "Fade In From Bottom" => "fade-in-from-bottom",
+			  		 "Grow In" => "grow-in",
+			  		 "Flip In Horizontal" => "flip-in",
+			  		 "Flip In Vertical" => "flip-in-vertical",
+			  		 "Reveal From Right" => "reveal-from-right",
+			  		 "Reveal From Bottom" => "reveal-from-bottom",
+			  		 "Reveal From Left" => "reveal-from-left",
+			  		 "Reveal From Top" => "reveal-from-top"
+				),
+				"dependency" => Array('element' => "enable_animation", 'not_empty' => true)
+			),
+
+			array(
+				"type" => "textfield",
+				"class" => "",
+				"heading" => "Animation Delay",
+				"param_name" => "delay",
+				"admin_label" => false,
+				"description" => __("Enter delay (in milliseconds) if needed e.g. 150. This parameter comes in handy when creating the animate in \"one by one\" effect.", "js_composer"),
+				"dependency" => Array('element' => "enable_animation", 'not_empty' => true)
+			),
+
+			array(
+				"type" => "checkbox",
+				"class" => "",
+				"heading" => "Boxed Column",
+				"value" => array("Boxed Style" => "true" ),
+				"param_name" => "boxed",
+				"description" => ""
+			),
 
 			array(
 				"type" => "checkbox",
@@ -1069,9 +878,7 @@ function nectar_custom_maps() {
 					"12%" => "padding-12-percent",
 					"13%" => "padding-13-percent",
 					"14%" => "padding-14-percent",
-					"15%" => "padding-15-percent",
-					"16%" => "padding-16-percent",
-					"17%" => "padding-17-percent"
+					"15%" => "padding-15-percent"
 				),
 				"description" => "When using the full width content row type or providing a background color/image for the column, you have the option to define the amount of padding your column will receive."
 			),
@@ -1158,6 +965,7 @@ function nectar_custom_maps() {
 				
 			),
 
+
 			array(
 				"type" => "fws_image",
 				"class" => "",
@@ -1175,56 +983,6 @@ function nectar_custom_maps() {
 				"param_name" => "enable_bg_scale",
 				"description" => "",
 				"dependency" => Array('element' => "background_image", 'not_empty' => true)
-			),
-			
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				"heading" => "Video Background",
-				"value" => array("Enable Video Background?" => "use_video" ),
-				"param_name" => "video_bg",
-				"description" => ""
-			),
-
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"heading" => "WebM File URL",
-				"value" => "",
-				"param_name" => "video_webm",
-				"description" => "You must include this format & the mp4 format to render your video with cross browser compatibility. OGV is optional.
-			Video must be in a 16:9 aspect ratio.",
-				"dependency" => Array('element' => "video_bg", 'value' => array('use_video'))
-			),
-
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"heading" => "MP4 File URL",
-				"value" => "",
-				"param_name" => "video_mp4",
-				"description" => "Enter the URL for your mp4 video file here",
-				"dependency" => Array('element' => "video_bg", 'value' => array('use_video'))
-			),
-
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"heading" => "OGV File URL",
-				"value" => "",
-				"param_name" => "video_ogv",
-				"description" => "Enter the URL for your ogv video file here",
-				"dependency" => Array('element' => "video_bg", 'value' => array('use_video'))
-			),
-
-			array(
-				"type" => "attach_image",
-				"class" => "",
-				"heading" => "Video Preview Image",
-				"value" => "",
-				"param_name" => "video_image",
-				"description" => "",
-				"dependency" => Array('element' => "video_bg", 'value' => array('use_video'))
 			),
 
 			array(
@@ -1244,44 +1002,14 @@ function nectar_custom_maps() {
 				"admin_label" => false,
 				"description" => "If you wish for this column to link somewhere, enter the URL in here",
 			),
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				"heading" => "Column Link Target",
-				"param_name" => "column_link_target",
-				'save_always' => true,
-				'value' => array(esc_html__("Same window", "js_composer") => "_self", esc_html__("New window", "js_composer") => "_blank")
-			),
-			
-			array(
-		      "type" => "dropdown",
-		      "heading" => esc_html__("Box Shadow", "js_composer"),
-		      'save_always' => true,
-		      "param_name" => "column_shadow",
-		      "value" => array(esc_html__("None", "js_composer") => "none", esc_html__("Small Depth", "js_composer") => "small_depth", esc_html__("Medium Depth", "js_composer") => "medium_depth", esc_html__("Large Depth", "js_composer") => "large_depth", esc_html__("Very Large Depth", "js_composer") => "x_large_depth"),
-		      "description" => esc_html__("Select your desired column box shadow", "js_composer")
-		    ),	
-				array(
-			      "type" => "dropdown",
-			      "heading" => esc_html__("Border Radius", "js_composer"),
-			      'save_always' => true,
-			      "param_name" => "column_border_radius",
-			      "value" => array(
-							esc_html__("0px", "js_composer") => "none",
-							esc_html__("3px", "js_composer") => "3px",
-							esc_html__("5px", "js_composer") => "5px", 
-							esc_html__("10px", "js_composer") => "10px", 
-							esc_html__("15px", "js_composer") => "15px", 
-							esc_html__("20px", "js_composer") => "20px"),
-			      "description" => esc_html__("This will round the edges of your column", "js_composer")
-			    ),	
+
 			array(
 				"type" => "textfield",
 				"class" => "",
 				"heading" => "Margin Top",
 				"value" => "",
 				"param_name" => "top_margin",
-				"description" => "Don't include \"px\" in your strings . e.g \"40\" - However you can also use a percent value in which case a \"%\" would be needed at the end e.g. \"10%\". Negative Values are also accepted."
+				"description" => "Don't include \"px\" in your string. e.g \"40\" - However you can also use a percent value in which case a \"%\" would be needed at the end e.g. \"10%\". Negative Values are also accepted."
 			),
 
 			array(
@@ -1290,16 +1018,7 @@ function nectar_custom_maps() {
 				"heading" => "Margin Bottom",
 				"value" => "",
 				"param_name" => "bottom_margin",
-				"description" => ""
-			),
-			
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				"heading" => "Boxed Column",
-				"value" => array("Boxed Style" => "true" ),
-				"param_name" => "boxed",
-				"description" => ""
+				"description" => "Don't include \"px\" in your string. e.g \"40\" - However you can also use a percent value in which case a \"%\" would be needed at the end e.g. \"10%\". Negative Values are also accepted."
 			),
 
 			array(
@@ -1326,21 +1045,7 @@ function nectar_custom_maps() {
 				'group' => __( 'Responsive Options', 'js_composer' ),
 				'description' => __( 'Adjust column for different screen sizes. Control width, offset and visibility settings.', 'js_composer' )
 			),
-			
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'group' => __( 'Responsive Options', 'js_composer' ),
-				'save_always' => true,
-				"heading" => "Tablet Column Width Inherits From",
-				"param_name" => "tablet_width_inherit",
-				"value" => array(
-					"Mobile Column Width (Default)" => "default",
-					"Small Desktop Colummn Width" => "small_desktop",
-				),
-				"description" => "This allows you to determine what your column width will inherit from when viewed on tablets in a portrait orientation."
-			),
-			
+
 			array(
 				"type" => "dropdown",
 				"class" => "",
@@ -1371,146 +1076,14 @@ function nectar_custom_maps() {
 					"Right" => "right",
 				),
 				"description" => "Text alignment that will be used on smartphones"
-			),
-
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'save_always' => true,
-				'group' => __( 'Border', 'js_composer' ),
-				"heading" => "Border Width",
-				"param_name" => "column_border_width",
-				"value" => array(
-					"0px" => "none",
-					"1px" => "1px",
-					"2px" => "2px",
-					"3px" => "3px",
-					"4px" => "4px",
-					"5px" => "5px",
-					"6px" => "6px",
-					"7px" => "7px",
-					"8px" => "8px"
-				),
-				"description" => ""
-			),
-			array(
-				"type" => "colorpicker",
-				"class" => "",
-				"heading" => "Border Color",
-				"param_name" => "column_border_color",
-				'group' => __( 'Border', 'js_composer' ),
-				"value" => "",
-				"description" => ""
-			),
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'save_always' => true,
-				'group' => __( 'Border', 'js_composer' ),
-				"heading" => "Border Style",
-				"param_name" => "column_border_style",
-				"value" => array(
-					"Solid" => "solid",
-					"Dotted" => "dotted",
-					"Dashed" => "dashed",
-					"Double" => "double",
-					"Double Offset" => "double_offset"
-				),
-				"description" => "",
-				"dependency" => Array('element' => "column_border_radius", 'value' => 'none')
-			),
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				'group' => __( 'Border', 'js_composer' ),
-				"heading" => "Enable Border Animation",
-				"value" => array("Enable Animation?" => "true" ),
-				"param_name" => "enable_border_animation",
-				"description" => "",
-				"dependency" => Array('element' => "column_border_radius", 'value' => 'none')
-			),
-
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"heading" => "Animation Delay",
-				'group' => __( 'Border', 'js_composer' ),
-				"param_name" => "border_animation_delay",
-				"admin_label" => false,
-				"description" => esc_html__("Enter delay (in milliseconds) if needed e.g. 150. This parameter comes in handy when creating the animate in \"one by one\" effect.", "js_composer"),
-				"dependency" => Array('element' => "enable_border_animation", 'not_empty' => true)
-			),
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'save_always' => true,
-				"heading" => "Column Background Image Animation",
-				"param_name" => "bg_image_animation",
-				"group" => "Animation",
-				"description" => "This will animate the optional background image layer of your column only when scrolled into view",
-				"value" => array(
-					"None" => "none",
-					"Fade In" => "fade-in",
-					"Zoom Out" => 'zoom-out',
-					"Zoom Out Slowly" => 'zoom-out-slow'
-				),
-			),
-			
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				"group" => "Animation",
-				"heading" => "Entire Column Animation",
-				"value" => array("Enable?" => "true" ),
-				"param_name" => "enable_animation",
-				"description" => "This will animate the entire column and all of its contents when scrolled into view"
-			),
-
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				"group" => "Animation",
-				"heading" => "Column Animation",
-				"param_name" => "animation",
-				'save_always' => true,
-				"value" => array(
-					 "None" => "none",
-						 "Fade In" => "fade-in",
-						 "Fade In From Left" => "fade-in-from-left",
-						 "Fade In Right" => "fade-in-from-right",
-						 "Fade In From Bottom" => "fade-in-from-bottom",
-						 "Grow In" => "grow-in",
-						 "Zoom Out" => 'zoom-out',
-						 "Flip In Horizontal" => "flip-in",
-						 "Flip In Vertical" => "flip-in-vertical",
-						 "Reveal From Right" => "reveal-from-right",
-						 "Reveal From Bottom" => "reveal-from-bottom",
-						 "Reveal From Left" => "reveal-from-left",
-						 "Reveal From Top" => "reveal-from-top"
-				),
-				"dependency" => Array('element' => "enable_animation", 'not_empty' => true)
-			),
-
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"group" => "Animation",
-				"heading" => "Column Animation Delay",
-				"param_name" => "delay",
-				"admin_label" => false,
-				"description" => esc_html__("Enter delay (in milliseconds) if needed e.g. 150. This parameter comes in handy when creating the animate in \"one by one\" effect.", "js_composer"),
-				"dependency" => Array('element' => "enable_animation", 'not_empty' => true)
-			),
-			
+			)
 
 		),
 		'js_view' => 'VcColumnView'
 	) );
-	
-	
-	
+
 	vc_map( array(
-		"name" => __( "Inner Column", "js_composer" ),
+		"name" => __( "Column", "js_composer" ),
 		"base" => "vc_column_inner",
 		"class" => "",
 		"icon" => "",
@@ -1520,7 +1093,56 @@ function nectar_custom_maps() {
 		"content_element" => false,
 		"is_container" => true,
 		"params" => array(
-		
+			array(
+				"type" => "checkbox",
+				"class" => "",
+				"heading" => "Enable Animation",
+				"value" => array("Enable Column Animation?" => "true" ),
+				"param_name" => "enable_animation",
+				"description" => ""
+			),
+
+			array(
+				"type" => "dropdown",
+				"class" => "",
+				'save_always' => true,
+				"heading" => "Animation",
+				"param_name" => "animation",
+				"value" => array(
+					 "None" => "none",
+				     "Fade In" => "fade-in",
+			  		 "Fade In From Left" => "fade-in-from-left",
+			  		 "Fade In Right" => "fade-in-from-right",
+			  		 "Fade In From Bottom" => "fade-in-from-bottom",
+			  		 "Grow In" => "grow-in",
+			  		 "Flip In Horizontal" => "flip-in",
+			  		 "Flip In Vertical" => "flip-in-vertical",
+			  		 "Reveal From Right" => "reveal-from-right",
+			  		 "Reveal From Bottom" => "reveal-from-bottom",
+			  		 "Reveal From Left" => "reveal-from-left",
+			  		 "Reveal From Top" => "reveal-from-top"		
+				),
+				"dependency" => Array('element' => "enable_animation", 'not_empty' => true)
+			),
+
+			array(
+				"type" => "textfield",
+				"class" => "",
+				"heading" => "Animation Delay",
+				"param_name" => "delay",
+				"admin_label" => false,
+				"description" => __("Enter delay (in milliseconds) if needed e.g. 150. This parameter comes in handy when creating the animate in \"one by one\" effect.", "js_composer"),
+				"dependency" => Array('element' => "enable_animation", 'not_empty' => true)
+			),
+
+			array(
+				"type" => "checkbox",
+				"class" => "",
+				"heading" => "Boxed Column",
+				"value" => array("Boxed Style" => "true" ),
+				"param_name" => "boxed",
+				"description" => ""
+			),
 
 			array(
 				"type" => "fws_image",
@@ -1563,9 +1185,7 @@ function nectar_custom_maps() {
 					"12%" => "padding-12-percent",
 					"13%" => "padding-13-percent",
 					"14%" => "padding-14-percent",
-					"15%" => "padding-15-percent",
-					"16%" => "padding-16-percent",
-					"17%" => "padding-17-percent"
+					"15%" => "padding-15-percent"
 				),
 				"description" => "When using the full width content row type or providing a background color/image for the column, you have the option to define the amount of padding your column will receive."
 			),
@@ -1591,15 +1211,7 @@ function nectar_custom_maps() {
 				),
 				"description" => "Use this to fine tune where the column padding will take effect"
 			),
-			
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				"heading" => "Centered Content",
-				"value" => array("Centered Content Alignment" => "true" ),
-				"param_name" => "centered_text",
-				"description" => ""
-			),
+
 			array(
 				"type" => "colorpicker",
 				"class" => "",
@@ -1629,85 +1241,17 @@ function nectar_custom_maps() {
 				)
 				
 			),
-			
-			array(
-				"type" => "colorpicker",
-				"class" => "",
-				"heading" => "Background Color Hover",
-				"param_name" => "background_color_hover",
-				"value" => "",
-				"description" => "",
-			),
+
 
 			array(
-				"type" => "dropdown",
+				"type" => "checkbox",
 				"class" => "",
-				'save_always' => true,
-				"heading" => "Background Hover Color Opacity",
-				"param_name" => "background_hover_color_opacity",
-				"value" => array(
-					"1" => "1",
-					"0.9" => "0.9",
-					"0.8" => "0.8",
-					"0.7" => "0.7",
-					"0.6" => "0.6",
-					"0.5" => "0.5",
-					"0.4" => "0.4",
-					"0.3" => "0.3",
-					"0.2" => "0.2",
-					"0.1" => "0.1",
-				)
-				
-			),
-			
-			array(
-				"type" => "colorpicker",
-				"class" => "",
-				"heading" => "Font Color",
-				"param_name" => "font_color",
-				"value" => "",
+				"heading" => "Centered Content",
+				"value" => array("Centered Content Alignment" => "true" ),
+				"param_name" => "centered_text",
 				"description" => ""
 			),
-			array(
-		      "type" => "dropdown",
-		      "heading" => esc_html__("Box Shadow", "js_composer"),
-		      'save_always' => true,
-		      "param_name" => "column_shadow",
-		      "value" => array(esc_html__("None", "js_composer") => "none", esc_html__("Small Depth", "js_composer") => "small_depth", esc_html__("Medium Depth", "js_composer") => "medium_depth", esc_html__("Large Depth", "js_composer") => "large_depth", esc_html__("Very Large Depth", "js_composer") => "x_large_depth"),
-		      "description" => esc_html__("Select your desired column box shadow", "js_composer")
-		    ),	
-			array(
-					"type" => "dropdown",
-					"heading" => esc_html__("Border Radius", "js_composer"),
-					'save_always' => true,
-					"param_name" => "column_border_radius",
-					"value" => array(
-						esc_html__("0px", "js_composer") => "none",
-						esc_html__("3px", "js_composer") => "3px",
-						esc_html__("5px", "js_composer") => "5px", 
-						esc_html__("10px", "js_composer") => "10px", 
-						esc_html__("15px", "js_composer") => "15px", 
-						esc_html__("20px", "js_composer") => "20px"),
-					"description" => esc_html__("This will round the edges of your column", "js_composer")
-				),	
-				
-				array(
-					"type" => "textfield",
-					"class" => "",
-					"heading" => "Margin Top",
-					"value" => "",
-					"param_name" => "top_margin",
-					"description" => "Don't include \"px\" in your strings . e.g \"40\" - However you can also use a percent value in which case a \"%\" would be needed at the end e.g. \"10%\". Negative Values are also accepted."
-				),
-	
-				array(
-					"type" => "textfield",
-					"class" => "",
-					"heading" => "Margin Bottom",
-					"value" => "",
-					"param_name" => "bottom_margin",
-					"description" => ""
-				),
+
 			array(
 				"type" => "textfield",
 				"class" => "",
@@ -1716,24 +1260,6 @@ function nectar_custom_maps() {
 				"admin_label" => false,
 				"description" => "If you wish for this column to link somewhere, enter the URL in here",
 			),
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				"heading" => "Column Link Target",
-				"param_name" => "column_link_target",
-				'save_always' => true,
-				'value' => array(esc_html__("Same window", "js_composer") => "_self", esc_html__("New window", "js_composer") => "_blank")
-			),
-			
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				"heading" => "Boxed Column",
-				"value" => array("Boxed Style" => "true" ),
-				"param_name" => "boxed",
-				"description" => ""
-			),
-
 
 			array(
 				"type" => "textfield",
@@ -1759,177 +1285,28 @@ function nectar_custom_maps() {
 				'param_name' => 'offset',
 				'group' => __( 'Responsive Options', 'js_composer' ),
 				'description' => __( 'Adjust column for different screen sizes. Control width, offset and visibility settings.', 'js_composer' )
-			),
-			
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'group' => __( 'Responsive Options', 'js_composer' ),
-				'save_always' => true,
-				"heading" => "Tablet Column Width Inherits From",
-				"param_name" => "tablet_width_inherit",
-				"value" => array(
-					"Mobile Column Width (Default)" => "default",
-					"Small Desktop Colummn Width" => "small_desktop",
-				),
-				"description" => "This allows you to determine what your column width will inherit from when viewed on tablets in a portrait orientation."
-			),
-
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'save_always' => true,
-				'group' => __( 'Border', 'js_composer' ),
-				"heading" => "Border Width",
-				"param_name" => "column_border_width",
-				"value" => array(
-					"0px" => "none",
-					"1px" => "1px",
-					"2px" => "2px",
-					"3px" => "3px",
-					"4px" => "4px",
-					"5px" => "5px",
-					"6px" => "6px",
-					"7px" => "7px",
-					"8px" => "8px",
-					"9px" => "9px",
-					"10px" => "10px"
-				),
-				"description" => ""
-			),
-			array(
-				"type" => "colorpicker",
-				"class" => "",
-				"heading" => "Border Color",
-				"param_name" => "column_border_color",
-				'group' => __( 'Border', 'js_composer' ),
-				"value" => "",
-				"description" => ""
-			),
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'save_always' => true,
-				'group' => __( 'Border', 'js_composer' ),
-				"heading" => "Border Style",
-				"param_name" => "column_border_style",
-				"value" => array(
-					"Solid" => "solid",
-					"Dotted" => "dotted",
-					"Dashed" => "dashed",
-					"Double" => "double",
-					"Double Offset" => "double_offset"
-				),
-				"description" => ""
-			),
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				'group' => __( 'Border', 'js_composer' ),
-				"heading" => "Enable Border Animation",
-				"value" => array("Enable Animation?" => "true" ),
-				"param_name" => "enable_border_animation",
-				"description" => ""
-			),
-
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"heading" => "Animation Delay",
-				'group' => __( 'Border', 'js_composer' ),
-				"param_name" => "border_animation_delay",
-				"admin_label" => false,
-				"description" => esc_html__("Enter delay (in milliseconds) if needed e.g. 150. This parameter comes in handy when creating the animate in \"one by one\" effect.", "js_composer"),
-				"dependency" => Array('element' => "enable_border_animation", 'not_empty' => true)
-			),
-			
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'save_always' => true,
-				"heading" => "Column Background Image Animation",
-				"param_name" => "bg_image_animation",
-				"group" => "Animation",
-				"description" => "This will animate the optional background image layer of your column only when scrolled into view",
-				"value" => array(
-					"None" => "none",
-					"Fade In" => "fade-in",
-					"Zoom Out" => 'zoom-out',
-					"Zoom Out Slowly" => 'zoom-out-slow'
-				),
-			),
-			
-			array(
-				"type" => "checkbox",
-				"class" => "",
-				"group" => "Animation",
-				"heading" => "Entire Column Animation",
-				"value" => array("Enable?" => "true" ),
-				"param_name" => "enable_animation",
-				"description" => "This will animate the entire column and all of its contents when scrolled into view"
-			),
-
-			array(
-				"type" => "dropdown",
-				"class" => "",
-				'save_always' => true,
-				"heading" => "Column Animation",
-				"group" => "Animation",
-				"param_name" => "animation",
-				"value" => array(
-					 "None" => "none",
-						 "Fade In" => "fade-in",
-						 "Fade In From Left" => "fade-in-from-left",
-						 "Fade In Right" => "fade-in-from-right",
-						 "Fade In From Bottom" => "fade-in-from-bottom",
-						 "Grow In" => "grow-in",
-						 "Zoom Out" => 'zoom-out',
-						 "Flip In Horizontal" => "flip-in",
-						 "Flip In Vertical" => "flip-in-vertical",
-						 "Reveal From Right" => "reveal-from-right",
-						 "Reveal From Bottom" => "reveal-from-bottom",
-						 "Reveal From Left" => "reveal-from-left",
-						 "Reveal From Top" => "reveal-from-top"		
-				),
-				"dependency" => Array('element' => "enable_animation", 'not_empty' => true)
-			),
-
-			array(
-				"type" => "textfield",
-				"class" => "",
-				"heading" => "Column Animation Delay",
-				"group" => "Animation",
-				"param_name" => "delay",
-				"admin_label" => false,
-				"description" => esc_html__("Enter delay (in milliseconds) if needed e.g. 150. This parameter comes in handy when creating the animate in \"one by one\" effect.", "js_composer"),
-				"dependency" => Array('element' => "enable_animation", 'not_empty' => true)
-			),
-
-
+			)
 		),
 		"js_view" => 'VcColumnView'
 	) );
 
 
 
+
+
+
 	//inner row class fix
 	vc_remove_param("vc_row_inner", "el_class");
-	vc_remove_param("vc_row_inner", "el_id");
 
 	//columns gap
 	vc_remove_param("vc_row_inner", "gap");
 
-
 	vc_add_param("vc_row_inner", array(
-		"type" => "dropdown",
+		"type" => "textfield",
 		"class" => "",
-		'save_always' => true,
-		"heading" => "Column Margin",
-		"param_name" => "column_margin",
-		"value" => array(
-			"Default" => "default",
-			"None" => "none"
-		)
+		"heading" => "Extra Class Name",
+		"param_name" => "class",
+		"value" => ""
 	));
 
 	vc_add_param("vc_row_inner", array(
@@ -1949,26 +1326,6 @@ function nectar_custom_maps() {
 				"param_name" => "bottom_padding",
 				"description" => "Don't include \"px\" in your string. e.g \"40\" - However you can also use a percent value in which case a \"%\" would be needed at the end e.g. \"10%\""
 	));
-	
-	vc_add_param("vc_row_inner", array(
-		"type" => "textfield",
-		"class" => "",
-		"heading" => "Translate Y",
-		"value" => "",
-		"edit_field_class" => "col-md-6",
-		"param_name" => "translate_y",
-		"description" => ""
-	));
-
-	vc_add_param("vc_row_inner", array(
-		"type" => "textfield",
-		"class" => "",
-		"heading" => "Translate X",
-		"value" => "",
-		"edit_field_class" => "col-md-6",
-		"param_name" => "translate_x",
-		"description" => ""
-	));
 
 	vc_add_param("vc_row_inner", array(
 		"type" => "dropdown",
@@ -1983,53 +1340,300 @@ function nectar_custom_maps() {
 		)
 	));
 
-	vc_add_param("vc_row_inner", array(
-		"type" => "textfield",
-		"class" => "",
-		"heading" => "Extra Class Name",
-		"param_name" => "class",
-		"value" => ""
-	));
 
-	vc_add_param("vc_row_inner",  array(
-        'type' => 'css_editor',
-        'heading' => 'Css' ,
-        'param_name' => 'css',
-        'group' => 'Design options',
-    ));
+	if(nectar_has_shortcode('full_width_section')) {  
 
-	vc_add_param("vc_row_inner",  array(
-		"type" => "textfield",
-		"class" => "",
-		"heading" => "Row ID",
-		"param_name" => "el_id",
-		"value" => "",
-		"description" => "Use this to option to add an ID onto your row. This can then be used to target the row with CSS or as an anchor point to scroll to when the relevant link is clicked."
-	));
-
-
-
-  //sidebar
-	vc_add_param("vc_widget_sidebar", array(
-		"type" => "checkbox",
-		"class" => "",
-		"heading" => "Make Sticky?",
-		"value" => array("Enable" => "true" ),
-		"param_name" => "enable_sticky",
-		"description" => "This will cause your widgetized sidebar to stick to the screen when used in a column within a row that is taller than the widgetized sidebar."
-	));
-
-
-	//full width section
 	require_once vc_path_dir('SHORTCODES_DIR', 'vc-row.php');
 
 	class WPBakeryShortCode_Full_Width_Section extends WPBakeryShortCode_VC_Row {
 			
+				
+		public function contentAdmin($atts, $content = null) {
+	        $width = $el_class = '';
+	        extract(shortcode_atts($this->predefined_atts, $atts));
+
+	        $output = '';
+
+	        $column_controls = $this->getColumnControls($this->settings('controls'));
+
+	        for ( $i=0; $i < count($width); $i++ ) {
+	            $output .= '<div'.$this->customAdminBockParams().' data-element_type="vc_row" class="'.$this->settings['base'].' wpb_vc_row wpb_sortable">';
+	            $output .= str_replace("%column_size%", 1, $column_controls);
+	            $output .= '<div class="wpb_element_wrapper">';
+	            $output .= '<div class="vc_row-fluid vc_row wpb_row_container vc_container_for_children">';
+	            if($content=='' && !empty($this->settings["default_content_in_template"])) {
+	                $output .= do_shortcode( shortcode_unautop($this->settings["default_content_in_template"]) );
+	            } else {
+	                $output .= do_shortcode( shortcode_unautop($content) );
+
+	            }
+	            $output .= '</div>';
+	            if ( isset($this->settings['params']) ) {
+	                $inner = '';
+	                foreach ($this->settings['params'] as $param) {
+	                    $param_value = isset($$param['param_name']) ? $$param['param_name'] : '';
+	                    if ( is_array($param_value)) {
+	                        // Get first element from the array
+	                        reset($param_value);
+	                        $first_key = key($param_value);
+	                        $param_value = $param_value[$first_key];
+	                    }
+	                    $inner .= $this->singleParamHtmlHolder($param, $param_value);
+	                }
+	                $output .= $inner;
+	            }
+	            $output .= '</div>';
+	            $output .= '</div>';
+	        }
+
+	        return $output;
+	    }	
+		
+	}
+		vc_map( array(
+				"name" => "Full Width Section",
+				"base" => "full_width_section",
+				"class" => "wpb_vc_row",
+				"is_container" => true,
+		 		"icon" => "icon-wpb-row",
+		 		"show_settings_on_create" => false,
+				"category" => __('Nectar Elements', 'js_composer'),
+				'js_view' => 'VcRowView',
+				"content_element" => false,
+			    'default_content' => '[vc_column width="1/1"]%content%[/vc_column]',
+			    'params' => array( 
+				    	array(
+						"type" => "dropdown",
+						"class" => "",
+						"heading" => "Type",
+						"param_name" => "type",
+						"value" => array(
+							"Full Width Background" => "full_width_background",
+							"Full Width Content" => "full_width_content",	
+							"In Container" => "in_container"
+						)
+					)
+			    )
+		));
+
+
+
+
+
+		vc_add_param("full_width_section", array(
+			"type" => "checkbox",
+			"class" => "",
+			"heading" => "Vetical Align Columns",
+			"value" => array("Make all columns in this row vertically aligned?" => "true" ),
+			"param_name" => "vertically_center_columns",
+			"description" => "",
+			"dependency" => Array('element' => "type", 'value' => array('full_width_content'))
+		));
+
+
+		vc_add_param("full_width_section", array(
+			"type" => "fws_image",
+			"class" => "",
+			"heading" => "Background Image",
+			"param_name" => "image_url",
+			"value" => "",
+			"description" => ""
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "dropdown",
+			"class" => "",
+			"heading" => "Background Position",
+			"param_name" => "bg_pos",
+			"value" => array(
+				 "Left Top" => "Left Top",
+		  		 "Left Center" => "Left Center",
+		  		 "Left Bottom" => "Left Bottom",
+		  		 "Center Top" => "Center Top",
+		  		 "Center Center" => "Center Center",
+		  		 "Center Bottom" => "Center Bottom",
+		  		 "Right Top" => "Right Top",
+		  		 "Right Center" => "Right Center",
+		  		 "Right Bottom" => "Right Bottom"
+			),
+			"dependency" => Array('element' => "image_url", 'not_empty' => true)
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "dropdown",
+			"class" => "",
+			"heading" => "Background Repeat",
+			"param_name" => "bg_repeat",
+			"value" => array(
+				"No Repeat" => "No-Repeat",
+				"Repeat" => "Repeat"
+			),
+			"dependency" => Array('element' => "image_url", 'not_empty' => true)
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "checkbox",
+			"class" => "",
+			"heading" => "Parallax Background",
+			"value" => array("Enable Parallax Background?" => "true" ),
+			"param_name" => "parallax_bg",
+			"description" => "",
+			"dependency" => Array('element' => "image_url", 'not_empty' => true)
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "colorpicker",
+			"class" => "",
+			"heading" => "Background Color",
+			"param_name" => "background_color",
+			"value" => "",
+			"description" => ""
+		));
+
+
+		if(!empty($options['header-inherit-row-color']) && $options['header-inherit-row-color'] == '1') {
+			vc_add_param("full_width_section", array(
+				"type" => "checkbox",
+				"class" => "",
+				"heading" => "Exclude Row From Header Color Inheritance",
+				"value" => array("Exclude this row from passing its background/text colors to the header" => "true" ),
+				"param_name" => "exclude_row_header_color_inherit",
+				"description" => ""
+			));
+		}
+
+		vc_add_param("full_width_section", array(
+			"type" => "checkbox",
+			"class" => "",
+			"heading" => "Video Background",
+			"value" => array("Enable Video Background?" => "use_video" ),
+			"param_name" => "video_bg",
+			"description" => ""
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "checkbox",
+			"class" => "",
+			"heading" => "Video Color Overlay",
+			"value" => array("Enable a color overlay ontop of your video?" => "true" ),
+			"param_name" => "enable_video_color_overlay",
+			"description" => "",
+			"dependency" => Array('element' => "video_bg", 'value' => array('use_video'))
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "colorpicker",
+			"class" => "",
+			"heading" => "Overlay Color",
+			"param_name" => "video_overlay_color",
+			"value" => "",
+			"description" => "",
+			"dependency" => Array('element' => "enable_video_color_overlay", 'value' => array('true'))
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "textfield",
+			"class" => "",
+			"heading" => "WebM File URL",
+			"value" => "",
+			"param_name" => "video_webm",
+			"description" => "You must include this format & the mp4 format to render your video with cross browser compatibility. OGV is optional.
+		Video must be in a 16:9 aspect ratio.",
+			"dependency" => Array('element' => "video_bg", 'value' => array('use_video'))
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "textfield",
+			"class" => "",
+			"heading" => "MP4 File URL",
+			"value" => "",
+			"param_name" => "video_mp4",
+			"description" => "Enter the URL for your mp4 video file here",
+			"dependency" => Array('element' => "video_bg", 'value' => array('use_video'))
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "textfield",
+			"class" => "",
+			"heading" => "OGV File URL",
+			"value" => "",
+			"param_name" => "video_ogv",
+			"description" => "Enter the URL for your ogv video file here",
+			"dependency" => Array('element' => "video_bg", 'value' => array('use_video'))
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "attach_image",
+			"class" => "",
+			"heading" => "Video Preview Image",
+			"value" => "",
+			"param_name" => "video_image",
+			"description" => "",
+			"dependency" => Array('element' => "video_bg", 'value' => array('use_video'))
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"heading" => "Text Color",
+			"param_name" => "text_color",
+			"value" => array(
+				"Light" => "light",
+				"Dark" => "dark",
+				"Custom" => "custom"
+			)
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "colorpicker",
+			"class" => "",
+			"heading" => "Custom Text Color",
+			"param_name" => "custom_text_color",
+			"value" => "",
+			"description" => "",
+			"dependency" => Array('element' => "text_color", 'value' => array('custom'))
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "dropdown",
+			"class" => "",
+			"heading" => "Text Alignment",
+			"param_name" => "text_align",
+			"value" => array(
+				"Left" => "left",
+				"Center" => "center",
+				"Right" => "right"
+			)
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "textfield",
+			"class" => "",
+			"heading" => "Padding Top",
+			"value" => "",
+			"param_name" => "top_padding",
+			"description" => ""
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "textfield",
+			"class" => "",
+			"heading" => "Padding Bottom",
+			"value" => "",
+			"param_name" => "bottom_padding",
+			"description" => ""
+		));
+
+		vc_add_param("full_width_section", array(
+			"type" => "textfield",
+			"class" => "",
+			"heading" => "Extra Class Name",
+			"param_name" => "class",
+			"value" => ""
+		));
 
 	}
-
-	vc_lean_map('full_width_section', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/full_width_section.php');
-
 
 
 
@@ -2038,230 +1642,2842 @@ function nectar_custom_maps() {
 
 
 	// Text block
-	//vc_remove_param("vc_column_text", "css_animation");
-	//inner row class fix
-	vc_remove_param("vc_gallery", "css_animation");
-	vc_remove_param("vc_pie", "css_animation");
-	vc_remove_param("vc_video", "css_animation");
-	vc_remove_param("vc_text_separator", "css_animation");
+	vc_remove_param("vc_column_text", "css_animation");
 
-	// Nectar Slider
-	$nectar_disable_nectar_slider = (!empty($nectar_options['disable_nectar_slider_pt']) && $nectar_options['disable_nectar_slider_pt'] == '1') ? true : false; 
-	if($nectar_disable_nectar_slider != true) {
-		vc_lean_map('nectar_slider', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_slider.php');
+
+	if(nectar_has_shortcode('nectar_slider')) { 
+
+		// Nectar Slider
+		$slider_locations = ($is_admin) ? get_terms('slider-locations') : array('All' => 'all');
+		$locations = array();
+
+		if($is_admin) {
+			foreach ($slider_locations as $location) {
+				$locations[$location->name] = $location->name;
+			}
+		} else {
+			$locations['All'] = 'all';
+		}
+
+		if (empty($locations)) {
+			$location_desc = 
+		      '<div class="alert">' .
+			 __('You currently don\'t have any Slider Locations setup. Please create some and add assign slides to them before using this!',NECTAR_THEME_NAME). 
+			'<br/><br/>
+			<a href="' . admin_url('edit.php?post_type=nectar_slider') . '">'. __('Link to Nectar Slider', NECTAR_THEME_NAME) . '</a>
+			</div>';
+		} else { $location_desc = ''; }
+
+		vc_map( array(
+		  "name" => __("Nectar Slider", "js_composer"),
+		  "base" => "nectar_slider",
+		  "icon" => "icon-wpb-nectar-slider",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('The jaw-dropping slider by ThemeNectar', 'js_composer'),
+		  "weight" => 10,
+		  "params" => array(
+		    array(
+		      "type" => "dropdown",
+		      "heading" => __("Select Slider", "js_composer"),
+		      "admin_label" => true,
+		      "param_name" => "location",
+		      "value" => $locations,
+		      "description" => $location_desc,
+		      'save_always' => true
+		    ),
+			array(
+		      "type" => "textfield",
+		      "heading" => __("Slider Height", "js_composer"),
+		      "param_name" => "slider_height",
+		      "admin_label" => true,
+		      "description" => __("Don't include \"px\" in your string. e.g. 650", "js_composer")
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Flexible Slider Height", "js_composer"),
+		      "param_name" => "flexible_slider_height",
+		      "description" => __("Would you like the height of your slider to constantly scale in porportion to the screen size?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Minimum Slider Height", "js_composer"),
+		      "param_name" => "min_slider_height",
+		      "dependency" => Array('element' => "flexible_slider_height", 'not_empty' => true),
+		      "description" => __("When using the flexible height option the slider can become very short on mobile devices - use this to ensure it stays tall enough for your content Don't include \"px\" in your string. e.g. 250", "js_composer")
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Display Full Width?", "js_composer"),
+		      "param_name" => "full_width",
+		      "description" => __("Would you like this slider to display the full width of the page?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Fullscreen Slider?", "js_composer"),
+		      "param_name" => "fullscreen",
+		      "description" => __("This will cause your slider to resize to always fill the users screen size", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "full_width", 'not_empty' => true)
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Display Arrow Navigation?", "js_composer"),
+		      "param_name" => "arrow_navigation",
+		      "description" => __("Would you like this slider to display arrows on the right and left sides?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "overall_style", 'value' => 'classic')
+		    ),
+		     array(
+		      "type" => "dropdown",
+		      "heading" => __("Slider Next/Prev Button Styling", "js_composer"),
+		      "param_name" => "slider_button_styling",
+		      "dependency" => Array('element' => "arrow_navigation", 'not_empty' => true),
+		      "value" => array(
+					'Standard With Slide Count On Hover' => 'btn_with_count',
+					'Next/Prev Slide Preview On Hover' => 'btn_with_preview'
+		      ),
+		      "description" => 'Please select your slider button styling here',
+		    ),
+		     array(
+		      "type" => "dropdown",
+		      "heading" => __("Overall Style", "js_composer"),
+		      "param_name" => "overall_style",
+		      "value" => array(
+					'Classic' => 'classic',
+					'Directional Based Content Movement' => 'directional'
+		      ),
+		      'save_always' => true,
+		      "description" => 'Please select your overall style here - note that some styles will remove the possibility to control certain options.'
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Display Bullet Navigation?", "js_composer"),
+		      "param_name" => "bullet_navigation",
+		      "description" => __("Would you like this slider to display bullets on the bottom?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "overall_style", 'value' => 'classic')
+		    ),
+		     array(
+		      "type" => "dropdown",
+		      "heading" => __("Bullet Navigation Style", "js_composer"),
+		      "param_name" => "bullet_navigation_style",
+		      "value" => array(
+					'See Through & Solid On Active' => 'see_through',
+					'Solid & Scale On Active' => 'scale'
+		      ),
+		      "description" => 'Please select your overall bullet navigation style here.',
+		      "dependency" => Array('element' => "bullet_navigation", 'not_empty' => true)
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Enable Swipe on Desktop?", "js_composer"),
+		      "param_name" => "desktop_swipe",
+		      "description" => __("Would you like this slider to have swipe interaction on desktop?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "overall_style", 'value' => 'classic')
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Parallax Slider?", "js_composer"),
+		      "param_name" => "parallax",
+		      "description" => __("will only activate if the slider is the <b>top level element</b> in the page", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Loop Slider?", "js_composer"),
+		      "param_name" => "loop",
+		      "description" => __("Would you like your slider to loop infinitely?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "overall_style", 'value' => 'classic')
+		    ),
+		    array(
+		      "type" => "dropdown",
+		      "heading" => __("Slider Transition", "js_composer"),
+		      "param_name" => "slider_transition",
+		      "value" => array(
+					'Slide' => 'slide',
+					'Fade' => 'fade'
+		      ),
+		      "description" => 'Please select your slider transition here',
+		      "dependency" => Array('element' => "overall_style", 'value' => 'classic'),
+		      'save_always' => true
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Autorotate?", "js_composer"),
+		      "param_name" => "autorotate",
+		      "description" => __("If you would like this slider to autorotate, enter the rotation speed in miliseconds here. i.e 5000", "js_composer")
+		    ),
+		    array(
+				"type" => "dropdown",
+				"class" => "",
+				"heading" => "Button Sizing",
+				"param_name" => "button_sizing",
+				"value" => array(
+					"Regular" => "regular",
+					"Large" => "large",
+					"Jumbo" => "jumbo"
+				),
+				'save_always' => true,
+				"description" => ""
+			),
+			array(
+		  	  "type" => "textfield",
+		      "heading" => __("Tablet Header Font Size", "js_composer"),
+		      "param_name" => "tablet_header_font_size",
+		      "admin_label" => false,
+		      "description" => __("Don't include \"px\" in your string. e.g. 32", "js_composer"),
+		  	  "group" => "Mobile Text Sizing Override"
+		  	),
+		  	array(
+		  	  "type" => "textfield",
+		      "heading" => __("Tablet Caption Font Size", "js_composer"),
+		      "param_name" => "tablet_caption_font_size",
+		      "admin_label" => false,
+		      "description" => __("Don't include \"px\" in your string. e.g. 20", "js_composer"),
+		  	  "group" => "Mobile Text Sizing Override"
+		  	),
+		  	array(
+		  	  "type" => "textfield",
+		      "heading" => __("Phone Header Font Size", "js_composer"),
+		      "param_name" => "phone_header_font_size",
+		      "admin_label" => false,
+		      "description" => __("Don't include \"px\" in your string. e.g. 24", "js_composer"),
+		  	  "group" => "Mobile Text Sizing Override"
+		  	),
+		  	array(
+		  	  "type" => "textfield",
+		      "heading" => __("Phone Caption Font Size", "js_composer"),
+		      "param_name" => "phone_caption_font_size",
+		      "admin_label" => false,
+		      "description" => __("Don't include \"px\" in your string. e.g. 14", "js_composer"),
+		  	  "group" => "Mobile Text Sizing Override"
+		  	)
+		  )
+		));
 	}
 
-	// Horizontal progress bar shortcode
-	vc_lean_map('bar', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/bar.php');
-	
+
+	if(nectar_has_shortcode('bar')) { 
+		// Horizontal progress bar shortcode
+		vc_map( array(
+				"name" => "Progress Bar",
+				"base" => "bar",
+				"icon" => "icon-wpb-progress_bar",
+				"allowed_container_element" => 'vc_row',
+				"category" => __('Nectar Elements', 'js_composer'),
+				"description" => __('Include a horizontal progress bar', 'js_composer'),
+				"params" => array(
+					array(
+						"type" => "textfield",
+						"holder" => "div",
+						"class" => "",
+						"heading" => "Title",
+						"param_name" => "title",
+						"description" => ""
+					),
+					array(
+						"type" => "textfield",
+						"holder" => "div",
+						"class" => "",
+						"heading" => "Percentage",
+						"param_name" => "percent",
+						"description" => "Don't include \"%\" in your string - e.g \"70\""
+					),
+					array(
+						"type" => "dropdown",
+						"holder" => "div",
+						"class" => "",
+						'save_always' => true,
+						"heading" => "Bar Color",
+						"param_name" => "color",
+						"value" => array(
+							"Accent-Color" => "Accent-Color",
+							"Extra-Color-1" => "Extra-Color-1",
+							"Extra-Color-2" => "Extra-Color-2",	
+							"Extra-Color-3" => "Extra-Color-3",
+							"Extra-Color-Gradient-1" => "extra-color-gradient-1",
+					 		"Extra-Color-Gradient-2" => "extra-color-gradient-2"
+						),
+						"description" => ""
+					)
+
+				)
+		) );
+	}
+
+
+
 
 	// Split Line Heading
 	class WPBakeryShortCode_Split_Line_Heading extends WPBakeryShortCode { }
+	vc_map( array(
+			"name" => "Split Line Heading",
+			"base" => "split_line_heading",
+			"icon" => "icon-wpb-split-line-heading",
+			"allowed_container_element" => 'vc_row',
+			"category" => __('Nectar Elements', 'js_composer'),
+			"description" => __('Animated multi line heading', 'js_composer'),
+			"params" => array(
+				array(
+			      "type" => "textarea_html",
+			      "holder" => "div",
+			      "heading" => __("Text Content", "js_composer"),
+			      "param_name" => "content",
+			      "value" => __("", "js_composer"),
+			      "description" => __("Each Line of this editor will be animated separately. Separate text with the Enter or Return key on your Keyboard.", "js_composer"),
+			      "admin_label" => false
+			    ),
 
-	vc_lean_map('split_line_heading', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/split_line_heading.php');
-	
-	
-	
-	// Split Line Heading
-	class WPBakeryShortCode_Nectar_Highlighted_Text extends WPBakeryShortCode { }
-
-	vc_lean_map('nectar_highlighted_text', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_highlighted_text.php');
+			)
+	) );
 
 
 
 	// Divider
-	vc_lean_map('divider', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/divider.php');
+	vc_map( array(
+			"name" => "Divider",
+			"base" => "divider",
+			"icon" => "icon-wpb-separator",
+			"allowed_container_element" => 'vc_row',
+			"category" => __('Nectar Elements', 'js_composer'),
+			"description" => __('Create space between your content', 'js_composer'),
+			"params" => array(
+				array(
+					"type" => "textfield",
+					"holder" => "div",
+					"class" => "",
+					"heading" => "Dividing Height",
+					"param_name" => "custom_height",
+					"description" => "If you would like to control the specifc number of pixels your divider is, enter it here. Don't enter \"px\", just the numnber e.g. \"20\""
+				),
+				array(
+					"type" => "dropdown",
+					"holder" => "div",
+					"class" => "",
+					"heading" => "Line Type",
+					'save_always' => true,
+					"param_name" => "line_type",
+					"value" => array(
+						"No Line" => "No Line",
+						"Full Width Line" => "Full Width Line",
+						"Small Line" => "Small Line"
+					)
+				),
+				array(
+				  "type" => "dropdown",
+				  "heading" => __("Line Thickness", "js_composer"),
+				  "admin_label" => false,
+				  "param_name" => "line_thickness",
+				  "value" => array(
+					    "1px" => "1",
+					    "2px" => "2",
+					    "3px" => "3",
+					    "4px" => "4",
+					    "5px" => "5",
+					    "6px" => "6",
+					    "7px" => "7",
+					    "8px" => "8",
+					    "9px" => "9",
+					    "10px" => "10"
+					),
+				  "description" => __("Please select thickness of your line ", "js_composer"),
+				  'save_always' => true,
+				  "dependency" => Array('element' => "line_type", 'value' => array('Full Width Line','Small Line'))
+				),
+				array(
+					"type" => "textfield",
+					"holder" => "div",
+					"admin_label" => false,
+					"class" => "",
+					"heading" => "Custom Line Width",
+					"param_name" => "custom_line_width",
+					"dependency" => Array('element' => "line_type", 'value' => array('Small Line')),
+					"description" => "If you would like to control the specifc number of pixels that your divider is (widthwise), enter it here. Don't enter \"px\", just the numnber e.g. \"20\""
+				),
+				 array(
+				  "type" => "dropdown",
+				  "heading" => __("Divider Color", "js_composer"),
+				  "param_name" => "divider_color",
+				  "admin_label" => false,
+				  "value" => array(
+				     "Default (inherit from row Text Color)" => "default",
+					 "Accent-Color" => "accent-color",
+					 "Extra-Color-1" => "extra-color-1",
+					 "Extra-Color-2" => "extra-color-2",	
+					 "Extra-Color-3" => "extra-color-3",
+					 "Extra-Color-Gradient-1" => "extra-color-gradient-1",
+					 "Extra-Color-Gradient-2" => "extra-color-gradient-2"
+				   ),
+				  'save_always' => true,
+				  "dependency" => Array('element' => "line_type", 'value' => array('Full Width Line','Small Line')),
+				  "description" => __("Please select the color for your divider line", "js_composer")
+				),
+				 array(
+			      "type" => 'checkbox',
+			      "heading" => __("Animate Line", "js_composer"),
+			      "param_name" => "animate",
+			      "description" => __("If selected, the divider line will animate in when scrolled to", "js_composer"),
+			      "value" => Array(__("Yes, please", "js_composer") => 'yes'),
+			      "dependency" => Array('element' => "line_type", 'value' => array('Full Width Line','Small Line')),
+			    ),
+				 array(
+			      "type" => "textfield",
+			      "heading" => __("Animation Delay", "js_composer"),
+			      "param_name" => "delay",
+			      "dependency" => Array('element' => "line_type", 'value' => array('Full Width Line','Small Line')),
+			      "description" => __("Enter delay (in milliseconds) if needed e.g. 150. This parameter comes in handy when creating the animate in \"one by one\" effect.", "js_composer")
+			    ),
+
+			)
+	));
+
+
 
 
 	// Single image
-	vc_lean_map('image_with_animation', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/image_with_animation.php');
+	vc_map( array(
+	  "name" => __("Single Image", "js_composer"),
+	  "base" => "image_with_animation",
+	  "icon" => "icon-wpb-single-image",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Simple image with CSS animation', 'js_composer'),
+	  "params" => array(
+	    array(
+	      "type" => "fws_image",
+	      "heading" => __("Image", "js_composer"),
+	      "param_name" => "image_url",
+	      "value" => "",
+	      "description" => __("Select image from media library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "dropdown",
+	      "heading" => __("Image Alignment", "js_composer"),
+	      'save_always' => true,
+	      "param_name" => "alignment",
+	      "value" => array(__("Align left", "js_composer") => "", __("Align right", "js_composer") => "right", __("Align center", "js_composer") => "center"),
+	      "description" => __("Select image alignment.", "js_composer")
+	    ),
+	    array(
+		  "type" => "dropdown",
+		  "heading" => __("CSS Animation", "js_composer"),
+		  "param_name" => "animation",
+		  "admin_label" => true,
+		  "value" => array(
+			    __("Fade In", "js_composer") => "Fade In", 
+			    __("Fade In From Left", "js_composer") => "Fade In From Left", 
+			    __("Fade In From Right", "js_composer") => "Fade In From Right", 
+			    __("Fade In From Bottom", "js_composer") => "Fade In From Bottom", 
+			    __("Grow In", "js_composer") => "Grow In",
+			    __("Flip In Horizontal", "js_composer") => "Flip In",
+			    __("Flip In Vertical", "js_composer") => "flip-in-vertical",
+			    __("None", "js_composer") => "None"
+			),
+		  'save_always' => true,
+		  "description" => __("Select animation type if you want this element to be animated when it enters into the browsers viewport. Note: Works only in modern browsers.", "js_composer")
+		),
+		array(
+	      "type" => "textfield",
+	      "heading" => __("Animation Delay", "js_composer"),
+	      "param_name" => "delay",
+	      "description" => __("Enter delay (in milliseconds) if needed e.g. 150. This parameter comes in handy when creating the animate in \"one by one\" effect in horizontal columns.", "js_composer")
+	    ),
+	    array(
+	      "type" => 'checkbox',
+	      "heading" => __("Link to large image?", "js_composer"),
+	      "param_name" => "img_link_large",
+	      "description" => __("If selected, image will be linked to the bigger image.", "js_composer"),
+	      "value" => Array(__("Yes, please", "js_composer") => 'yes')
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Image link", "js_composer"),
+	      "param_name" => "img_link",
+	      "description" => __("Enter url if you want this image to have link.", "js_composer"),
+	      "dependency" => Array('element' => "img_link_large", 'is_empty' => true)
+	    ),
+	    array(
+	      "type" => "dropdown",
+	      "heading" => __("Link Target", "js_composer"),
+	      "param_name" => "img_link_target",
+	      "value" => array(__("Same window", "js_composer") => "_self", __("New window", "js_composer") => "_blank"),
+	      "dependency" => Array('element' => "img_link", 'not_empty' => true)
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Extra class name", "js_composer"),
+	      "param_name" => "el_class",
+	      "description" => __("If you wish to style particular content element differently, then use this field to add a class name and then refer to it in your css file.", "js_composer")
+	    ),
+	    array(
+	      "type" => "dropdown",
+	      "heading" => __("Box Shadow", "js_composer"),
+	      'save_always' => true,
+	      "param_name" => "box_shadow",
+	      "value" => array(__("None", "js_composer") => "none", __("Small Depth", "js_composer") => "small_depth", __("Medium Depth", "js_composer") => "medium_depth", __("Large Depth", "js_composer") => "large_depth", __("Very Large Depth", "js_composer") => "x_large_depth"),
+	      "description" => __("Select your desired image box shadow", "js_composer")
+	    ),
+	    array(
+	      "type" => "dropdown",
+	      "heading" => __("Max Width", "js_composer"),
+	      'save_always' => true,
+	      "param_name" => "max_width",
+	      "value" => array(
+		      	__("100%", "js_composer") => "100%",
+		      	__("125%", "js_composer") => "125%", 
+		      	__("150%", "js_composer") => "150%",
+		      	__("165%", "js_composer") => "165%",  
+		      	__("175%", "js_composer") => "175%", 
+		      	__("200%", "js_composer") => "200%", 
+		      	__("225%", "js_composer") => "225%", 
+		      	__("250%", "js_composer") => "250%"
+	      ),
+	      "description" => __("Select your desired max width here - by default images are not allowed to display larger than the column they're contained in. Changing this to a higher value will allow you to create designs where your image overflows out of the column partially off screen.", "js_composer")
+	    )
+	  )
+	));
 
 
 	//cascading images
-	class WPBakeryShortCode_Nectar_Cascading_Images extends WPBakeryShortCode {}
+class WPBakeryShortCode_Nectar_Cascading_Images extends WPBakeryShortCode {}
 	
-	vc_lean_map('nectar_cascading_images', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_cascading_images.php');
+	$nectar_offset_vals_arr = array(
+	     "0%" => "0%",
+		 "5%" => "5%",
+		 "10%" => "10%",
+		 "15%" => "15%",	
+		 "20%" => "20%",
+		 "25%" => "25%",
+		 "30%" => "30%",
+		 "35%" => "35%",	
+		 "40%" => "40%",
+		 "45%" => "45%",	
+		 "50%" => "50%",
+		 "55%" => "55%",
+		 "60%" => "60%",
+		 "65%" => "65%",	
+		 "70%" => "70%",
+		 "75%" => "75%",	
+		 "80%" => "80%",
+		 "85%" => "85%",	
+		 "90%" => "90%",
+		 "95%" => "95%",	
+		 "100%" => "100%"
+    );
+	vc_map( array(
+	  "name" => __("Cascading Images", "js_composer"),
+	  "base" => "nectar_cascading_images",
+	  "icon" => "icon-wpb-images-stack",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Animated overlapping images', 'js_composer'),
+	  "params" => array(
+	  	
+	    array(
+	      "type" => "fws_image",
+	      "heading" => __("Image #1", "js_composer"),
+	      "param_name" => "image_1_url",
+	      "group" => 'Layer #1',
+	      "value" => "",
+	      "description" => __("Select image from media library.", "js_composer")
+	    ),
+	    array(
+			"type" => "colorpicker",
+			"class" => "",
+			"group" => 'Layer #1',
+			"heading" => "Layer BG Color",
+			"param_name" => "image_1_bg_color",
+			"value" => "",
+			"description" => "Use this to set a BG color for the layer"
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #1',
+		  "heading" => __("Offset X", "js_composer"),
+		  "param_name" => "image_1_offset_x_sign",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  "edit_field_class" => "col-md-2",
+		  'save_always' => true
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #1',
+		  "heading" => __("Offset X", "js_composer"),
+		  "param_name" => "image_1_offset_x",
+		  "edit_field_class" => "col-md-4",
+		  "value" => $nectar_offset_vals_arr,
+		  'save_always' => true
+		),
+		 array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #1',
+		  "heading" => __("Offset Y", "js_composer"),
+		  "param_name" => "image_1_offset_y_sign",
+		  'edit_field_class' => 'offset-y-sign',
+		  "edit_field_class" => "col-md-2",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  'save_always' => true
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #1',
+		  "heading" => __("Offset Y", "js_composer"),
+		  "param_name" => "image_1_offset_y",
+		  "value" => $nectar_offset_vals_arr,
+		  'edit_field_class' => 'offset-y',
+		  "edit_field_class" => "col-md-4",
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #1',
+		  "heading" => __("Rotate", "js_composer"),
+		  "param_name" => "image_1_rotate_sign",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  "edit_field_class" => "col-md-2",
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #1',
+		  "heading" => __("Rotate", "js_composer"),
+		  "param_name" => "image_1_rotate",
+		  "edit_field_class" => "col-md-4",
+		  "value" => array(
+		     "None" => "none",
+			 "2.5°" => "2.5",
+			 "5°" => "5",
+			 "7.5°" => "7.5",	
+			 "10°" => "10",
+			 "12.5°" => "12.5",
+			 "15°" => "15",
+			 "17.5°" => "17.5",	
+			 "20°" => "20"
+		   ),
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "heading" => __("CSS Animation", "js_composer"),
+		  "group" => 'Layer #1',
+		  "param_name" => "image_1_animation",
+		  "admin_label" => true,
+		  "value" => array(
+			    __("Fade In", "js_composer") => "Fade In", 
+			    __("Fade In From Left", "js_composer") => "Fade In From Left", 
+			    __("Fade In From Right", "js_composer") => "Fade In From Right", 
+			    __("Fade In From Bottom", "js_composer") => "Fade In From Bottom", 
+			    __("Grow In", "js_composer") => "Grow In",
+			    __("Flip In", "js_composer") => "Flip In",
+			    __("None", "js_composer") => "None"
+			),
+		  'save_always' => true,
+		  "description" => __("Select animation type if you want this layer to be animated when it enters into the browsers viewport.", "js_composer")
+		),
+	    array(
+	      "type" => "dropdown",
+	      "group" => 'Layer #1',
+	      "heading" => __("Box Shadow", "js_composer"),
+	      'save_always' => true,
+	      "param_name" => "image_1_box_shadow",
+	      "value" => array(__("None", "js_composer") => "none", __("Small Depth", "js_composer") => "small_depth", __("Medium Depth", "js_composer") => "medium_depth", __("Large Depth", "js_composer") => "large_depth", __("Very Large Depth", "js_composer") => "x_large_depth"),
+	      "description" => __("Select your desired image box shadow", "js_composer")
+	    ),
+
+	    array(
+	      "type" => "fws_image",
+	      "group" => 'Layer #2',
+	      "heading" => __("Image #2", "js_composer"),
+	      "param_name" => "image_2_url",
+	      "value" => "",
+	      "description" => __("Select image from media library.", "js_composer")
+	    ),
+	    array(
+			"type" => "colorpicker",
+			"class" => "",
+			"group" => 'Layer #2',
+			"heading" => "Layer BG Color",
+			"param_name" => "image_2_bg_color",
+			"value" => "",
+			"description" => "Use this to set a BG color for the layer"
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #2',
+		  "heading" => __("Offset X", "js_composer"),
+		  "param_name" => "image_2_offset_x_sign",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  "edit_field_class" => "col-md-2",
+		  'save_always' => true
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #2',
+		  "heading" => __("Offset X", "js_composer"),
+		  "param_name" => "image_2_offset_x",
+		  "edit_field_class" => "col-md-4",
+		  "value" => $nectar_offset_vals_arr,
+		  'save_always' => true
+		),
+		 array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #2',
+		  "heading" => __("Offset Y", "js_composer"),
+		  "param_name" => "image_2_offset_y_sign",
+		  'edit_field_class' => 'offset-y-sign',
+		  "edit_field_class" => "col-md-2",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  'save_always' => true
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #2',
+		  "heading" => __("Offset Y", "js_composer"),
+		  "param_name" => "image_2_offset_y",
+		  "value" => $nectar_offset_vals_arr,
+		  'edit_field_class' => 'offset-y',
+		  "edit_field_class" => "col-md-4",
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #2',
+		  "heading" => __("Rotate", "js_composer"),
+		  "param_name" => "image_2_rotate_sign",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  "edit_field_class" => "col-md-2",
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #2',
+		  "heading" => __("Rotate", "js_composer"),
+		  "param_name" => "image_2_rotate",
+		  "edit_field_class" => "col-md-4",
+		  "value" => array(
+		     "None" => "none",
+			 "2.5°" => "2.5",
+			 "5°" => "5",
+			 "7.5°" => "7.5",	
+			 "10°" => "10",
+			 "12.5°" => "12.5",
+			 "15°" => "15",
+			 "17.5°" => "17.5",	
+			 "20°" => "20"
+		   ),
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "heading" => __("CSS Animation", "js_composer"),
+		  "group" => 'Layer #2',
+		  "param_name" => "image_2_animation",
+		  "value" => array(
+			    __("Fade In", "js_composer") => "Fade In", 
+			    __("Fade In From Left", "js_composer") => "Fade In From Left", 
+			    __("Fade In From Right", "js_composer") => "Fade In From Right", 
+			    __("Fade In From Bottom", "js_composer") => "Fade In From Bottom", 
+			    __("Grow In", "js_composer") => "Grow In",
+			    __("Flip In", "js_composer") => "Flip In",
+			    __("None", "js_composer") => "None"
+			),
+		  'save_always' => true,
+		  "description" => __("Select animation type if you want this layer to be animated when it enters into the browsers viewport.", "js_composer")
+		),
+	    array(
+	      "type" => "dropdown",
+	      "group" => 'Layer #2',
+	      "heading" => __("Box Shadow", "js_composer"),
+	      'save_always' => true,
+	      "param_name" => "image_2_box_shadow",
+	      "value" => array(__("None", "js_composer") => "none", __("Small Depth", "js_composer") => "small_depth", __("Medium Depth", "js_composer") => "medium_depth", __("Large Depth", "js_composer") => "large_depth", __("Very Large Depth", "js_composer") => "x_large_depth"),
+	      "description" => __("Select your desired image box shadow", "js_composer")
+	    ),
+
+	    array(
+	      "type" => "fws_image",
+	      "group" => 'Layer #3',
+	      "heading" => __("Image #3", "js_composer"),
+	      "param_name" => "image_3_url",
+	      "value" => "",
+	      "description" => __("Select image from media library.", "js_composer")
+	    ),
+	    array(
+			"type" => "colorpicker",
+			"class" => "",
+			"group" => 'Layer #3',
+			"heading" => "Layer BG Color",
+			"param_name" => "image_3_bg_color",
+			"value" => "",
+			"description" => "Use this to set a BG color for the layer"
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #3',
+		  "heading" => __("Offset X", "js_composer"),
+		  "param_name" => "image_3_offset_x_sign",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  "edit_field_class" => "col-md-2",
+		  'save_always' => true
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #3',
+		  "heading" => __("Offset X", "js_composer"),
+		  "param_name" => "image_3_offset_x",
+		  "edit_field_class" => "col-md-4",
+		  "value" => $nectar_offset_vals_arr,
+		  'save_always' => true
+		),
+		 array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #3',
+		  "heading" => __("Offset Y", "js_composer"),
+		  "param_name" => "image_3_offset_y_sign",
+		  'edit_field_class' => 'offset-y-sign',
+		  "edit_field_class" => "col-md-2",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  'save_always' => true
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #3',
+		  "heading" => __("Offset Y", "js_composer"),
+		  "param_name" => "image_3_offset_y",
+		  "value" => $nectar_offset_vals_arr,
+		  'edit_field_class' => 'offset-y',
+		  "edit_field_class" => "col-md-4",
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #3',
+		  "heading" => __("Rotate", "js_composer"),
+		  "param_name" => "image_3_rotate_sign",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  "edit_field_class" => "col-md-2",
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #3',
+		  "heading" => __("Rotate", "js_composer"),
+		  "param_name" => "image_3_rotate",
+		  "edit_field_class" => "col-md-4",
+		  "value" => array(
+		     "None" => "none",
+			 "2.5°" => "2.5",
+			 "5°" => "5",
+			 "7.5°" => "7.5",	
+			 "10°" => "10",
+			 "12.5°" => "12.5",
+			 "15°" => "15",
+			 "17.5°" => "17.5",	
+			 "20°" => "20"
+		   ),
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "heading" => __("CSS Animation", "js_composer"),
+		  "group" => 'Layer #3',
+		  "param_name" => "image_3_animation",
+		  "value" => array(
+			    __("Fade In", "js_composer") => "Fade In", 
+			    __("Fade In From Left", "js_composer") => "Fade In From Left", 
+			    __("Fade In From Right", "js_composer") => "Fade In From Right", 
+			    __("Fade In From Bottom", "js_composer") => "Fade In From Bottom", 
+			    __("Grow In", "js_composer") => "Grow In",
+			    __("Flip In", "js_composer") => "Flip In",
+			    __("None", "js_composer") => "None"
+			),
+		  'save_always' => true,
+		  "description" => __("Select animation type if you want this layer to be animated when it enters into the browsers viewport.", "js_composer")
+		),
+	    array(
+	      "type" => "dropdown",
+	      "group" => 'Layer #3',
+	      "heading" => __("Box Shadow", "js_composer"),
+	      'save_always' => true,
+	      "param_name" => "image_3_box_shadow",
+	      "value" => array(__("None", "js_composer") => "none", __("Small Depth", "js_composer") => "small_depth", __("Medium Depth", "js_composer") => "medium_depth", __("Large Depth", "js_composer") => "large_depth", __("Very Large Depth", "js_composer") => "x_large_depth"),
+	      "description" => __("Select your desired image box shadow", "js_composer")
+	    ),
+
+	    array(
+	      "type" => "fws_image",
+	      "group" => 'Layer #4',
+	      "heading" => __("Image #4", "js_composer"),
+	      "param_name" => "image_4_url",
+	      "value" => "",
+	      "description" => __("Select image from media library.", "js_composer")
+	    ),
+	    array(
+			"type" => "colorpicker",
+			"class" => "",
+			"group" => 'Layer #4',
+			"heading" => "Layer BG Color",
+			"param_name" => "image_4_bg_color",
+			"value" => "",
+			"description" => "Use this to set a BG color for the layer"
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #4',
+		  "heading" => __("Offset X", "js_composer"),
+		  "param_name" => "image_4_offset_x_sign",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  "edit_field_class" => "col-md-2",
+		  'save_always' => true
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #4',
+		  "heading" => __("Offset X", "js_composer"),
+		  "param_name" => "image_4_offset_x",
+		  "edit_field_class" => "col-md-4",
+		  "value" => $nectar_offset_vals_arr,
+		  'save_always' => true
+		),
+		 array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #4',
+		  "heading" => __("Offset Y", "js_composer"),
+		  "param_name" => "image_4_offset_y_sign",
+		  'edit_field_class' => 'offset-y-sign',
+		  "edit_field_class" => "col-md-2",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  'save_always' => true
+		),
+	    array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #4',
+		  "heading" => __("Offset Y", "js_composer"),
+		  "param_name" => "image_4_offset_y",
+		  "value" => $nectar_offset_vals_arr,
+		  'edit_field_class' => 'offset-y',
+		  "edit_field_class" => "col-md-4",
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #4',
+		  "heading" => __("Rotate", "js_composer"),
+		  "param_name" => "image_4_rotate_sign",
+		  "value" => array(
+			 "+" => "+",
+			 "-" => "-"
+		   ),
+		  "edit_field_class" => "col-md-2",
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "group" => 'Layer #4',
+		  "heading" => __("Rotate", "js_composer"),
+		  "param_name" => "image_4_rotate",
+		  "edit_field_class" => "col-md-4",
+		  "value" => array(
+		     "None" => "none",
+			 "2.5°" => "2.5",
+			 "5°" => "5",
+			 "7.5°" => "7.5",	
+			 "10°" => "10",
+			 "12.5°" => "12.5",
+			 "15°" => "15",
+			 "17.5°" => "17.5",	
+			 "20°" => "20"
+		   ),
+		  'save_always' => true
+		),
+		array(
+		  "type" => "dropdown",
+		  "heading" => __("CSS Animation", "js_composer"),
+		  "group" => 'Layer #4',
+		  "param_name" => "image_4_animation",
+		  "value" => array(
+			    __("Fade In", "js_composer") => "Fade In", 
+			    __("Fade In From Left", "js_composer") => "Fade In From Left", 
+			    __("Fade In From Right", "js_composer") => "Fade In From Right", 
+			    __("Fade In From Bottom", "js_composer") => "Fade In From Bottom", 
+			    __("Grow In", "js_composer") => "Grow In",
+			    __("Flip In", "js_composer") => "Flip In",
+			    __("None", "js_composer") => "None"
+			),
+		  'save_always' => true,
+		  "description" => __("Select animation type if you want this layer to be animated when it enters into the browsers viewport.", "js_composer")
+		),
+	    array(
+	      "type" => "dropdown",
+	      "group" => 'Layer #4',
+	      "heading" => __("Box Shadow", "js_composer"),
+	      'save_always' => true,
+	      "param_name" => "image_4_box_shadow",
+	      "value" => array(__("None", "js_composer") => "none", __("Small Depth", "js_composer") => "small_depth", __("Medium Depth", "js_composer") => "medium_depth", __("Large Depth", "js_composer") => "large_depth", __("Very Large Depth", "js_composer") => "x_large_depth"),
+	      "description" => __("Select your desired image box shadow", "js_composer")
+	    ),
+	     array(
+	      "type" => "textfield",
+	      "heading" => __("Time Between Animations", "js_composer"),
+	      "param_name" => "animation_timing",
+	      "description" => __("Enter your desired time between animations in milliseconds, defaults to 200 if left blank", "js_composer")
+	    )
+
+	  )
+
+	));
+
 
 
 
 	// Image Comparision
 	class WPBakeryShortCode_Nectar_Image_Comparison extends WPBakeryShortCode {}
+	
+	vc_map( array(
+	  "name" => __("Image Comparison", "js_composer"),
+	  "base" => "nectar_image_comparison",
+	  "icon" => "icon-wpb-single-image",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Shows differences in two images', 'js_composer'),
+	  "params" => array(
+	    array(
+	      "type" => "fws_image",
+	      "heading" => __("Image One", "js_composer"),
+	      "param_name" => "image_url",
+	      "value" => "",
+	      "description" => __("Select image from media library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "fws_image",
+	      "heading" => __("Image Two", "js_composer"),
+	      "param_name" => "image_2_url",
+	      "value" => "",
+	      "description" => __("Select image from media library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Extra class name", "js_composer"),
+	      "param_name" => "el_class",
+	      "description" => __("If you wish to style particular content element differently, then use this field to add a class name and then refer to it in your css file.", "js_composer")
+	    )
+	  )
+	));
 
-	vc_lean_map('nectar_image_comparison', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_image_comparison.php');
 
 
 	// Portfolio
-	vc_lean_map('nectar_portfolio', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_portfolio.php');
 
-	vc_lean_map('recent_projects', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/recent_projects.php');
+		$portfolio_types = ($is_admin) ? get_terms('project-type') : array('All' => 'all');
+
+		$types_options = array("All" => "all");
+		$types_options_2 = array("Default" => "default");
+
+		if($is_admin) {
+			foreach ($portfolio_types as $type) {
+				$types_options[$type->name] = $type->slug;
+				$types_options_2[$type->name] = $type->slug;
+			}
+
+		} else {
+			$types_options['All'] = 'all';
+			$types_options_2['All'] = 'all';
+		}
 
 
-	//Horizontal List Item
-	class WPBakeryShortCode_Nectar_Horizontal_List_Item extends WPBakeryShortCode {}
-	vc_lean_map('nectar_horizontal_list_item', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_horizontal_list_item.php');
+
+
+		vc_map( array(
+		  "name" => __("Portfolio", "js_composer"),
+		  "base" => "nectar_portfolio",
+		  "weight" => 8,
+		  "icon" => "icon-wpb-portfolio",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Add a portfolio element', 'js_composer'),
+		  "params" => array(
+			array(
+			  "type" => "dropdown",
+			  "heading" => __("Layout", "js_composer"),
+			  "param_name" => "layout",
+			  "admin_label" => true,
+			  "value" => array(
+				    "3 Columns" => "3",
+				    "4 Columns" => "4",
+				    "Fullwidth" => "fullwidth"
+				),
+			  "description" => __("Please select the layout you would like for your portfolio ", "js_composer"),
+			  'save_always' => true
+			),
+			array(
+		      "type" => 'checkbox',
+		      "heading" => __("Constrain Max Columns to 4?", "js_composer"),
+		      "param_name" => "constrain_max_cols",
+		      "description" => __("This will change the max columns to 4 (default is 5 for fullwidth). Activating this will make it easier to create a grid with no empty spaces at the end of the list on all screen sizes.", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "layout", 'value' => 'fullwidth')
+		    ),
+		    /*
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Remove Column Padding?", "js_composer"),
+		      "param_name" => "remove_column_padding",
+		      "description" => __("This will allow your projects to sit flush against each other.", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "layout", 'value' => array('3', '4'))
+		    ),*/
+		    array(
+			  "type" => "dropdown_multi",
+			  "heading" => __("Portfolio Categories", "js_composer"),
+			  "param_name" => "category",
+			  "admin_label" => true,
+			  "value" => $types_options,
+			  'save_always' => true,
+			  "description" => __("Please select the categories you would like to display for your portfolio. <br/> You can select multiple categories too (ctrl + click on PC and command + click on Mac).", "js_composer")
+			),
+			array(
+			  "type" => "dropdown",
+			  "heading" => __("Starting Category", "js_composer"),
+			  "param_name" => "starting_category",
+			  "admin_label" => false,
+			  "value" => $types_options_2,
+			  'save_always' => true,
+			  "description" => __("Please select the category you would like you're portfolio to start filtered on.", "js_composer"),
+			  "dependency" => Array('element' => "enable_sortable", 'not_empty' => true)
+			),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Project Style", "js_composer"),
+			  "param_name" => "project_style",
+			  "admin_label" => true,
+			  'save_always' => true,
+			  "value" => array(
+				    "Meta below thumb w/ links on hover" => "1",
+				    "Meta on hover + entire thumb link" => "2",
+				    "Meta on hover w/ zoom + entire thumb link" => "7",
+				    "Title overlaid w/ zoom effect on hover" => "3",
+				    "Title overlaid w/ zoom effect on hover alt" => "5",
+				    "Meta from bottom on hover + entire thumb link" => "4",
+				    "3D Parallax on hover" => "6"
+				),
+			  "description" => __("Please select the style you would like your projects to display in ", "js_composer")
+			),
+			array(
+			  "type" => "dropdown",
+			  "heading" => __("Item Spacing", "js_composer"),
+			  "param_name" => "item_spacing",
+			  'save_always' => true,
+			  "value" => array(
+			  		"Default" => "default",
+				    "1px" => "1px",
+				    "2px" => "2px",
+				    "3px" => "3px",
+				    "4px" => "4px",
+				    "5px" => "5px",
+				    "6px" => "6px",
+				    "7px" => "7px",
+				    "8px" => "8px",
+				    "9px" => "9px",
+				    "10px" => "10px",
+				    "15px" => "15px",
+				    "20px" => "20px"
+				),
+			  "dependency" => Array('element' => "layout", 'value' => array('fullwidth')),
+			  "description" => __("Please select the spacing you would like between your items. ", "js_composer")
+			),/*
+			array(
+		      "type" => 'checkbox',
+		      "heading" => __("Disable Featured Image Cropping", "js_composer"),
+		      "param_name" => "disable_cropping",
+		      "description" => __("This will allow your portfolio items to display without any cropping - useful for photography layouts.", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),*/
+			array(
+		      "type" => 'checkbox',
+		      "heading" => __("Masonry Style", "js_composer"),
+		      "param_name" => "masonry_style",
+		      "description" => __("This will allow your portfolio items to display in a masonry layout as opposed to a fixed grid. You can define your masonry sizes in each project. <br/> ", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Enable Sortable", "js_composer"),
+		      "param_name" => "enable_sortable",
+		      "description" => __("Checking this box will allow your portfolio to display sortable filters", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Horizontal Filters", "js_composer"),
+		      "param_name" => "horizontal_filters",
+		      "description" => __("This will allow your filters to display horizontally instead of in a dropdown. (Only used if you enable sortable above.)", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "enable_sortable", 'not_empty' => true)
+		    ),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Filter Alignment", "js_composer"),
+			  "param_name" => "filter_alignment",
+			  "value" => array(
+			     "Default" => "default",
+				 "Centered" => "center"
+			   ),
+			  'save_always' => true,
+			  "dependency" => Array('element' => "horizontal_filters", 'not_empty' => true),
+			  "description" => __("Please select the alignment you would like for your horizontal filters", "js_composer")
+			),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Filter Color Scheme", "js_composer"),
+			  "param_name" => "filter_color",
+			  "value" => array(
+			     "Default" => "default",
+				 "Accent-Color" => "accent-color",
+				 "Extra-Color-1" => "extra-color-1",
+				 "Extra-Color-2" => "extra-color-2",	
+				 "Extra-Color-3" => "extra-color-3",
+				 "Accent-Color Underline" => "accent-color-underline",
+				 "Extra-Color-1 Underline" => "extra-color-1-underline",
+				 "Extra-Color-2 Underline" => "extra-color-2-underline",	
+				 "Extra-Color-3 Underline" => "extra-color-3-underline",
+				 "Black" => "black"
+			   ),
+			  'save_always' => true,
+			  "dependency" => Array('element' => "enable_sortable", 'not_empty' => true),
+			  "description" => __("Please select the color scheme you would like for your filters. Only applies to full width inline filters and regular dropdown filters", "js_composer")
+			),
+
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Enable Pagination", "js_composer"),
+		      "param_name" => "enable_pagination",
+		      "description" => __("Would you like to enable pagination for this portfolio?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Pagination Type", "js_composer"),
+			  "param_name" => "pagination_type",
+			  "admin_label" => true,
+			  "value" => array(	
+				    'Default' => 'default',
+				    'Infinite Scroll' => 'infinite_scroll',
+				),
+			  'save_always' => true,
+			  "description" => __("Please select your pagination type here.", "js_composer"),
+			  "dependency" => Array('element' => "enable_pagination", 'not_empty' => true)
+			),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Projects Per Page", "js_composer"),
+		      "param_name" => "projects_per_page",
+		      "description" => __("How many projects would you like to display per page? <br/> If pagination is not enabled, will simply show this number of projects <br/> Enter as a number example \"20\"", "js_composer")
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Lightbox Only", "js_composer"),
+		      "param_name" => "lightbox_only",
+		      "description" => __("This will remove the single project page from being accessible thus rendering your portfolio into only a gallery.", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Load In Animation", "js_composer"),
+			  "param_name" => "load_in_animation",
+			  'save_always' => true,
+			  "value" => array(
+				    "None" => "none",
+				    "Fade In" => "fade_in",
+				    "Fade In From Bottom" => "fade_in_from_bottom"
+				),
+			  "description" => __("Please select the style you would like your projects to display in ", "js_composer")
+			)
+		  )
+		));
+
+
+
+
+
+		vc_map( array(
+		  "name" => __("Recent Projects", "js_composer"),
+		  "base" => "recent_projects",
+		  "weight" => 8,
+		  "icon" => "icon-wpb-recent-projects",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Show off some recent projects', 'js_composer'),
+		  "params" => array(
+		    array(
+			  "type" => "dropdown_multi",
+			  "heading" => __("Portfolio Categories", "js_composer"),
+			  "param_name" => "category",
+			  "admin_label" => true,
+			  "value" => $types_options,
+			  'save_always' => true,
+			  "description" => __("Please select the categories you would like to display for your recent projects carousel. <br/> You can select multiple categories too (ctrl + click on PC and command + click on Mac).", "js_composer")
+			),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Project Style", "js_composer"),
+			  "param_name" => "project_style",
+			  "admin_label" => true,
+			  "value" => array(
+				    "Meta below thumb w/ links on hover" => "1",
+				    "Meta on hover + entire thumb link" => "2",
+				    "Title overlaid w/ zoom effect on hover" => "3",
+				    "Meta from bottom on hover + entire thumb link" => "4"
+				),
+			  'save_always' => true,
+			  "description" => __("Please select the style you would like your projects to display in ", "js_composer")
+			),
+			array(
+		      "type" => 'checkbox',
+		      "heading" => __("Full Width Carousel", "js_composer"),
+		      "param_name" => "full_width",
+		      "description" => __("This will make your carousel extend the full width of the page.", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Heading Text", "js_composer"),
+		      "param_name" => "heading",
+		      "description" => __("Enter any text you would like for the heading of your carousel", "js_composer")
+		    ),
+			array(
+		      "type" => "textfield",
+		      "heading" => __("Page Link Text", "js_composer"),
+		      "param_name" => "page_link_text",
+		      "description" => __("This will be the text that is in a link leading users to your desired page (will be omitted for full width carousels and an icon will be used instead)", "js_composer")
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Page Link URL", "js_composer"),
+		      "param_name" => "page_link_url",
+		      "description" => __("Enter portfolio page URL you would like to link to. Remember to include \"http://\"!", "js_composer")
+		    ),	
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Controls & Text Color", "js_composer"),
+			  "param_name" => "control_text_color",
+			  "value" => array(
+				    "Dark" => "dark",
+				    "Light" => "light",
+				),
+			  'save_always' => true,
+			  "description" => __("Please select the color you desire for your carousel controls/heading text.", "js_composer")
+			),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Hide Carousel Controls", "js_composer"),
+		      "param_name" => "hide_controls",
+		      "description" => __("Checking this box will remove the controls from your carousel", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Number of Projects To Show", "js_composer"),
+		      "param_name" => "number_to_display",
+		      "description" => __("Enter as a number example \"6\"", "js_composer")
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Lightbox Only", "js_composer"),
+		      "param_name" => "lightbox_only",
+		      "description" => __("This will remove the single project page from being accessible thus rendering your portfolio into only a gallery.", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    )
+		  )
+		));
+
+
+
 
 
 	// Blog
-	vc_lean_map('nectar_blog', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_blog.php');
-		
-	vc_lean_map('recent_posts', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/recent_posts.php');
+
+		$blog_types = ($is_admin) ? get_categories() : array('All' => 'all');
+
+		$blog_options = array("All" => "all");
+
+		if($is_admin) {
+			foreach ($blog_types as $type) {
+				if(isset($type->name) && isset($type->slug))
+					$blog_options[htmlspecialchars($type->name)] = htmlspecialchars($type->slug);
+			}
+		} else {
+			$blog_options['All'] = 'all';
+		}
+
+
+
+
+
+		vc_map( array(
+		  "name" => __("Blog", "js_composer"),
+		  "base" => "nectar_blog",
+		  "weight" => 8,
+		  "icon" => "icon-wpb-blog",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Display a Blog element', 'js_composer'),
+		  "params" => array(
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Layout", "js_composer"),
+			  "param_name" => "layout",
+			  "admin_label" => true,
+			  "value" => array(
+				    'Standard Blog W/ Sidebar' => 'std-blog-sidebar',
+				    'Standard Blog No Sidebar' => 'std-blog-fullwidth',
+				    'Masonry Blog W/ Sidebar' => 'masonry-blog-sidebar',
+				    'Masonry Blog No Sidebar' => 'masonry-blog-fullwidth',
+				    'Masonry Blog Fullwidth' => 'masonry-blog-full-screen-width'
+				),
+			  'save_always' => true,
+			  "description" => __("Please select the layout you desire for your blog", "js_composer")
+			),
+			array(
+			  "type" => "dropdown_multi",
+			  "heading" => __("Blog Categories", "js_composer"),
+			  "param_name" => "category",
+			  "admin_label" => true,
+			  "value" => $blog_options,
+			  'save_always' => true,
+			  "description" => __("Please select the categories you would like to display for your blog. <br/> You can select multiple categories too (ctrl + click on PC and command + click on Mac).", "js_composer")
+			),
+			array(
+		      "type" => 'checkbox',
+		      "heading" => __("Enable Pagination", "js_composer"),
+		      "param_name" => "enable_pagination",
+		      "description" => __("Would you like to enable pagination?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    ),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Pagination Type", "js_composer"),
+			  "param_name" => "pagination_type",
+			  "admin_label" => true,
+			  "value" => array(	
+				    'Default' => 'default',
+				    'Infinite Scroll' => 'infinite_scroll',
+				),
+			  'save_always' => true,
+			  "description" => __("Please select your pagination type here.", "js_composer"),
+			  "dependency" => Array('element' => "enable_pagination", 'not_empty' => true)
+			),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Posts Per Page", "js_composer"),
+		      "param_name" => "posts_per_page",
+		      "description" => __("How many posts would you like to display per page? <br/> If pagination is not enabled, will simply show this number of posts <br/> Enter as a number example \"10\"", "js_composer")
+		    ),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Load In Animation", "js_composer"),
+			  "param_name" => "load_in_animation",
+			  'save_always' => true,
+			  "value" => array(
+				    "None" => "none",
+				    "Fade In" => "fade_in",
+				    "Fade In From Bottom" => "fade_in_from_bottom"
+				),
+			  "description" => __("Please select the loading animation you would like ", "js_composer")
+			)
+		  )
+		));
+
+
+
+		vc_map( array(
+		  "name" => __("Recent Posts", "js_composer"),
+		  "base" => "recent_posts",
+		  "weight" => 8,
+		  "icon" => "icon-wpb-recent-posts",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Display your recent blog posts', 'js_composer'),
+		  "params" => array(
+		  	array(
+			  "type" => "dropdown",
+			  "heading" => __("Style", "js_composer"),
+			  "param_name" => "style",
+			  "admin_label" => true,
+			  "value" => array(	
+				    'Default' => 'default',
+				    'Minimal' => 'minimal',
+				    'Minimal - Title Only' => 'title_only',
+				    'Slider' => 'slider'
+				),
+			  'save_always' => true,
+			  "description" => __("Please select desired style here.", "js_composer")
+			),
+			array(
+		      "type" => "textfield",
+		      "heading" => __("Slider Height", "js_composer"),
+		      "param_name" => "slider_size",
+		      "admin_label" => false,
+		      "dependency" => Array('element' => "style", 'value' => 'slider'),
+		      "description" => __("Don't include \"px\" in your string. e.g. 650", "js_composer")
+		    ),
+			array(
+			  "type" => "dropdown_multi",
+			  "heading" => __("Blog Categories", "js_composer"),
+			  "param_name" => "category",
+			  "admin_label" => true,
+			  "value" => $blog_options,
+			  'save_always' => true,
+			  "description" => __("Please select the categories you would like to display in your recent posts. <br/> You can select multiple categories too (ctrl + click on PC and command + click on Mac).", "js_composer")
+			),
+			array(
+			  "type" => "dropdown",
+			  "heading" => __("Number Of Columns", "js_composer"),
+			  "param_name" => "columns",
+			  "admin_label" => false,
+			  "value" => array(
+			  	'4' => '4',
+			  	'3' => '3',
+			  	'2' => '2',
+			  	'1' => '1'
+			  ),
+			  "dependency" => Array('element' => "style", 'value' => array('default','minimal','title_only')),
+			  'save_always' => true,
+			  "description" => __("Please select the number of posts you would like to display.", "js_composer")
+			),
+			array(
+		      "type" => "textfield",
+		      "heading" => __("Number Of Posts", "js_composer"),
+		      "param_name" => "posts_per_page",
+		      "description" => __("How many posts would you like to display? <br/> Enter as a number example \"4\"", "js_composer")
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Post Offset", "js_composer"),
+		      "param_name" => "post_offset",
+		      "description" => __("Optioinally enter a number e.g. \"2\" to offset your posts by - useful for when you're using multiple styles of this element on the same page and would like them to no show duplicate posts", "js_composer")
+		    ),
+			array(
+		      "type" => 'checkbox',
+		      "heading" => __("Enable Title Labels", "js_composer"),
+		      "param_name" => "title_labels",
+		      "description" => __("These labels are defined by you in the \"Blog Options\" tab of your theme options panel.", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "style", 'value' => 'default')
+		    ),
+		  )
+		));
+
+
+
+
+
+
 
 
 	//WooCommerce Related
+
+
 	global $woocommerce;
 
 	if($woocommerce) {
 
 		class WPBakeryShortCode_Nectar_Woo_Products extends WPBakeryShortCode {
 			
+			
 		}
 
-		vc_lean_map('nectar_woo_products', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_woo_products.php');
-		
 
-	}
-	
-	
-	//category grid
-	class WPBakeryShortCode_Nectar_Category_Grid extends WPBakeryShortCode {
-		
-	}
-	
-	/*helper function*/
-	if(!function_exists('nectar_grid_item_markup')) {
-		
-		function nectar_grid_item_markup($temp_cat_obj_holder,$atts) {
-		    
-		    $markup = '';
-		    
-		    if($temp_cat_obj_holder) {
-		        $temp_cat_obj_holder->term_id;
-		        $temp_cat_obj_holder->name;
-		        
-		        //grab cat image
-		        $bg_style_markup = '';
-		        
-		        if($atts['post_type'] == 'posts') {
-		          $thumbnail_id = get_post_thumbnail_id( $temp_cat_obj_holder->term_id );
-		          $terms =  get_option( "taxonomy_$temp_cat_obj_holder->term_id" );
-		          $image_bg = $terms['category_thumbnail_image'];
-		          if(!empty($image_bg)) {
-		            $image_id = fjarrett_get_attachment_id_from_url($image_bg);
-		            $image_bg = wp_get_attachment_image_src( $image_id, 'large');
-		            
-		            $bg_style_markup = (!empty($image_bg)) ? 'style="background-image:url('. $image_bg[0] .');"' : '';
-		          }
-		        
-		          
-		        } else if( $atts['post_type'] == 'products') {
-		          $thumbnail_id = get_woocommerce_term_meta( $temp_cat_obj_holder->term_id, 'thumbnail_id', true );
-		          $image_bg = wp_get_attachment_image_src( $thumbnail_id, 'large');
-		          $bg_style_markup = (!empty($image_bg)) ? 'style="background-image:url('. $image_bg[0] .');"' : '';
-		          
-		        }
-		        
-		        $bg_overlay_markup = (!empty($atts['color_overlay'])) ? 'style=" background-color: '.$atts['color_overlay'].';"' : '';
-		        
-		        $markup .= '<div class="nectar-category-grid-item"> <div class="inner"> <a class="nectar-category-grid-link" href="'. get_term_link($temp_cat_obj_holder->term_id) .'"></a>';
-		        $markup .= '<div class="nectar-category-grid-item-bg" '.$bg_style_markup.'></div>';
-		        $markup .= '<div class="bg-overlay" '.$bg_overlay_markup.' data-opacity="'. $atts['color_overlay_opacity'] .'" data-hover-opacity="'. $atts['color_overlay_hover_opacity'] .'"></div>';
-		        $markup .= '<div class="content" data-subtext-vis="'. $atts['subtext_visibility'] .'" data-subtext="'. $atts['subtext'] .'" ><h3>'. $temp_cat_obj_holder->name .'</h3>';
-		
-		        if($atts['subtext'] == 'cat_item_count') {
-		          
-		          $subtext_count_markup = '';
-		          
-		          if($atts['post_type'] == 'posts') {
-		            if($temp_cat_obj_holder->count == 1) { $subtext_count_markup = '<span class="subtext">' . $temp_cat_obj_holder->count .  ' ' . esc_html__('post', 'salient') . '</span>'; } 
-		            else { $subtext_count_markup = '<span class="subtext">' . $temp_cat_obj_holder->count .  ' ' . esc_html__('posts', 'salient') . '</span>'; }
-		          } else if($atts['post_type'] == 'products') {
-		            if($temp_cat_obj_holder->count == 1) {  $subtext_count_markup = '<span class="subtext">' . $temp_cat_obj_holder->count .  ' ' . esc_html__('product', 'salient') . '</span>'; } 
-		            else { $subtext_count_markup = '<span class="subtext">' . $temp_cat_obj_holder->count .  ' ' . esc_html__('products', 'salient') . '</span>';  }  
-		          }
-		          
-		          $markup .= $subtext_count_markup;
-		
-		        } else if($atts['subtext'] == 'custom') {
-		          $markup .= '<span class="subtext">' . $atts['custom_subtext'] . '</span>';
-		        }
-		        $markup .= '</div>';
-		        $markup .= '</div></div>';
-		    }
-		    
-		    return $markup;
-		    
+		$woo_args = array(
+			'taxonomy' => 'product_cat',
+		);
+		$woo_types = ($is_admin) ? get_categories($woo_args) : array('All' => 'all');
+		$woo_options = array("All" => "all");
+
+		if($is_admin) {
+			foreach ($woo_types as $type) {
+				$woo_options[$type->name] = $type->slug;
+			}
+		} else {
+			$woo_options['All'] = 'all';
 		}
- }
 
-	vc_lean_map('nectar_category_grid', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_category_grid.php');
-	
+		////recent products
+		vc_map( array(
+		  "name" => __("WooCommerce Products", "js_composer"),
+		  "base" => "nectar_woo_products",
+		  "weight" => 8,
+		  "icon" => "icon-wpb-recent-products",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Display your products', 'js_composer'),
+		  "params" => array(
+		  	array(
+			  "type" => "dropdown",
+			  "heading" => __("Product Type", "js_composer"),
+			  "param_name" => "product_type",
+			  "value" => array(
+			  	'All' => 'all',
+			  	'Sale Only' => 'sale',
+			  	'Featured Only' => 'featured',
+			  	'Best Selling Only' => 'best_selling'
+			  ),
+			  'save_always' => true,
+			  "description" => __("Please select the type of products you would like to display.", "js_composer")
+			),
+			array(
+			  "type" => "dropdown_multi",
+			  "heading" => __("Product Categories", "js_composer"),
+			  "param_name" => "category",
+			  "admin_label" => true,
+			  "value" => $woo_options,
+			  'save_always' => true,
+			  "description" => __("Please select the categories you would like to display in your products. <br/> You can select multiple categories too (ctrl + click on PC and command + click on Mac).", "js_composer")
+			),
+			array(
+			  "type" => "dropdown",
+			  "heading" => __("Number Of Columns", "js_composer"),
+			  "param_name" => "columns",
+			  "value" => array(
+			  	'4' => '4',
+			  	'3' => '3',
+			  	'2' => '2',
+			  	'1' => '1'
+			  ),
+			  'save_always' => true,
+			  "description" => __("Please select the number of columns you would like to display.", "js_composer")
+			),
+			array(
+		      "type" => "textfield",
+		      "heading" => __("Number Of Products", "js_composer"),
+		      "param_name" => "per_page",
+		       "admin_label" => true,
+		      "description" => __("How many posts would you like to display? <br/> Enter as a number example \"4\"", "js_composer")
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Enable Carousel Display", "js_composer"),
+		      "param_name" => "carousel",
+		      "description" => __("This will override your column choice", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => true),
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Enable Controls On Hover", "js_composer"),
+		      "param_name" => "controls_on_hover",
+		      "dependency" => Array('element' => "carousel", 'not_empty' => true),
+		      "description" => __("This will add buttons for additional user control over your product carousel", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => true),
+		    )
+		  )
+		));
+
+
+	}
 
 
 	// Centered Heading
-	vc_lean_map('heading', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/heading.php');
+	vc_map( array(
+	  "name" => __("Centered Heading", "js_composer"),
+	  "base" => "heading",
+	  "icon" => "icon-wpb-centered-heading",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Simple heading', 'js_composer'),
+	  "params" => array(
+	    array(
+	      "type" => "textarea_html",
+	      "holder" => "div",
+	      "heading" => __("Heading", "js_composer"),
+	      "param_name" => "content",
+	      "value" => __("", "js_composer")
+	    ), 
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Subtitle", "js_composer"),
+	      "param_name" => "subtitle",
+	      "description" => __("The subtitle text under the main title", "js_composer")
+	    )
+	  )
+	));
 
-	// Call to action
-	class WPBakeryShortCode_Nectar_Cta extends WPBakeryShortCode {}
-	vc_lean_map('nectar_cta', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_cta.php');
+
+
 
 	// video lightbox
 	class WPBakeryShortCode_Nectar_Video_Lightbox extends WPBakeryShortCode {}
-	vc_lean_map('nectar_video_lightbox', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_video_lightbox.php');
+	vc_map( array(
+	  "name" => __("Video Lightbox", "js_composer"),
+	  "base" => "nectar_video_lightbox",
+	  "icon" => "icon-wpb-video-lightbox",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Add a video lightbox link', 'js_composer'),
+	  "params" => array(
+	  	array(
+		  "type" => "dropdown",
+		  "heading" => __("Link Style", "js_composer"),
+		  "param_name" => "link_style",
+		  "value" => array(
+		     "Play Button" => "play_button",
+		     "Play Button With Preview Image" => "play_button_2",
+			 "Nectar Button" => "nectar-button"
+		   ),
+		  'save_always' => true,
+		  "admin_label" => true,
+		  "description" => __("Please select your link style", "js_composer")	  
+		),
+		array(
+	      "type" => "textfield",
+	      "heading" => __("Video URL", "js_composer"),
+	      "param_name" => "video_url",
+	      "admin_label" => false,
+	      "description" => __("The URL to your video on Youtube or Vimeo e.g. <br/> https://vimeo.com/118023315 <br/> https://www.youtube.com/watch?v=6oTurM7gESE", "js_composer")
+	    ),
+	    array(
+		  "type" => "dropdown",
+		  "heading" => __("Play Button Color", "js_composer"),
+		  "param_name" => "nectar_play_button_color",
+		  "value" => array(
+			 "Accent-Color" => "Default-Accent-Color",
+			 "Extra-Color-1" => "Extra-Color-1",
+			 "Extra-Color-2" => "Extra-Color-2",	
+			 "Extra-Color-3" => "Extra-Color-3"
+		   ),
+		  'save_always' => true,
+		  "dependency" => array('element' => "link_style", 'value' => "play_button_2"),
+		  "description" => __("Please select the color you desire", "js_composer")
+		),
+	    array(
+	      "type" => "fws_image",
+	      "heading" => __("Video Preview Image", "js_composer"),
+	      "param_name" => "image_url",
+	      "value" => "",
+	      "dependency" => array('element' => "link_style", 'value' => "play_button_2"),
+	      "description" => __("Select image from media library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "dropdown",
+	      "dependency" => array('element' => "link_style", 'value' => "play_button_2"),
+	      "heading" => __("Box Shadow", "js_composer"),
+	      'save_always' => true,
+	      "param_name" => "box_shadow",
+	      "value" => array(__("None", "js_composer") => "none", __("Small Depth", "js_composer") => "small_depth", __("Medium Depth", "js_composer") => "medium_depth", __("Large Depth", "js_composer") => "large_depth", __("Very Large Depth", "js_composer") => "x_large_depth"),
+	      "description" => __("Select your desired image box shadow", "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Link Text", "js_composer"),
+	      "param_name" => "link_text",
+	      "admin_label" => false,
+	      "dependency" => array('element' => "link_style", 'value' => "nectar-button"),
+	      "description" => __("The text that will be displayed for your link", "js_composer")
+	    ),
+	   
+
+	     array(
+		  "type" => "dropdown",
+		  "heading" => __("Color", "js_composer"),
+		  "param_name" => "nectar_button_color",
+		  "value" => array(
+			 "Accent-Color" => "Default-Accent-Color",
+			 "Extra-Color-1" => "Default-Extra-Color-1",
+			 "Extra-Color-2" => "Default-Extra-Color-2",	
+			 "Extra-Color-3" => "Default-Extra-Color-3",
+			 "Transparent-Accent-Color" =>  "Transparent-Accent-Color",
+			 "Transparent-Extra-Color-1" => "Transparent-Extra-Color-1",
+			 "Transparent-Extra-Color-2" => "Transparent-Extra-Color-2",	
+			 "Transparent-Extra-Color-3" => "Transparent-Extra-Color-3"
+		   ),
+		  'save_always' => true,
+		  "dependency" => array('element' => "link_style", 'value' => "nectar-button"),
+		  "description" => __("Please select the color you desire", "js_composer")
+		),
+
+	  )
+	));
 
 
-	// Milestone
-	vc_lean_map('milestone', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/milestone.php');
 
-	// Google Map
-	class WPBakeryShortCode_Nectar_Gmap extends WPBakeryShortCode {
-	}
-	vc_lean_map('nectar_gmap', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_gmap.php');
+		// Milestone
+		vc_map( array(
+		  "name" => __("Milestone", "js_composer"),
+		  "base" => "milestone",
+		  "icon" => "icon-wpb-milestone",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Add an animated milestone', 'js_composer'),
+		  "params" => array(
+			array(
+		      "type" => "textfield",
+		      "heading" => __("Milestone Number", "js_composer"),
+		      "param_name" => "number",
+		      "admin_label" => false,
+		      "description" => __("The number/count of your milestone e.g. \"13\"", "js_composer")
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Milestone Symbol", "js_composer"),
+		      "param_name" => "symbol",
+		      "admin_label" => false,
+		      "description" => __("An optional symbol to place next to the number counted to. e.g. \"%\" or \"+\"", "js_composer")
+		    ),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Milestone Symbol Position", "js_composer"),
+			  "param_name" => "symbol_position",
+			  "value" => array(
+			     "After Number" => "after",
+				 "Before Number" => "before",
+			   ),
+			  'save_always' => true,
+			  "description" => __("Please select the position you would like for your symbol.", "js_composer"),
+			  "dependency" => Array('element' => "symbol", 'not_empty' => true)
+			),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Milestone Subject", "js_composer"),
+		      "param_name" => "subject",
+		      "admin_label" => true,
+		      "description" => __("The subject of your milestones e.g. \"Projects Completed\"", "js_composer")
+		    ),
+		     array(
+			  "type" => "dropdown",
+			  "heading" => __("Color", "js_composer"),
+			  "param_name" => "color",
+			  "value" => array(
+			     "Default" => "Default",
+				 "Accent-Color" => "Accent-Color",
+				 "Extra-Color-1" => "Extra-Color-1",
+				 "Extra-Color-2" => "Extra-Color-2",	
+				 "Extra-Color-3" => "Extra-Color-3"
+			   ),
+			  'save_always' => true,
+			  "description" => __("Please select the color you wish for your milestone to display in.", "js_composer")
+			),
+
+		     array(
+			  "type" => "dropdown",
+			  "heading" => __("Animation Effect", "js_composer"),
+			  "param_name" => "effect",
+			  "value" => array(
+				 "Count To Value" => "count",
+				 "Motion Blur Slide In" => "motion_blur"
+			   ),
+			  'save_always' => true,
+			  "description" => __("Please select the animation you would like your milestone to have", "js_composer")
+			),
+		     array(
+		      "type" => "textfield",
+		      "heading" => __("Milestone Number Font Size", "js_composer"),
+		      "param_name" => "number_font_size",
+		      "admin_label" => false,
+		      "description" => __("Enter your size in pixels, the default is 62.", "js_composer")
+		    ),
+		     array(
+		      "type" => "textfield",
+		      "heading" => __("Milestone Symbol Font Size", "js_composer"),
+		      "param_name" => "symbol_font_size",
+		      "admin_label" => false,
+		      "description" => __("Enter your size in pixels.", "js_composer"),
+		      "dependency" => Array('element' => "symbol", 'not_empty' => true)
+		    ),
+		     array(
+			  "type" => "dropdown",
+			  "heading" => __("Milestone Symbol Alignment", "js_composer"),
+			  "param_name" => "symbol_alignment",
+			  "value" => array(
+			     "Default" => "Default",
+				 "Superscript" => "Superscript",
+			   ),
+			  'save_always' => true,
+			  "description" => __("Please select the alignment you desire for your symbol.", "js_composer"),
+			  "dependency" => Array('element' => "symbol", 'not_empty' => true)
+			),
+
+		  )
+		));
+
+
+
+		// Google Map
+		class WPBakeryShortCode_Nectar_Gmap extends WPBakeryShortCode {
+		}
+
+		vc_map( array(
+		  "name" => __("Google Map", "js_composer"),
+		  "base" => "nectar_gmap",
+		  "icon" => "icon-wpb-map",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Flexible Google Map', 'js_composer'),
+		  "params" => array(
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Map height", "js_composer"),
+		      "param_name" => "size",
+		      "description" => __('Enter map height in pixels. Example: 200. <span>As of June 2016, a Google map API key is needed to allow this element to display. Please See the Salient options panel > general settings > css/script related tab to enter this.</span>', "js_composer")
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Map Center Point Latitude", "js_composer"),
+		      "param_name" => "map_center_lat",
+		      "description" => __("Please enter the latitude for the maps center point.", "js_composer")
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Map Center Point Longitude", "js_composer"),
+		      "param_name" => "map_center_lng",
+		      "description" => __("Please enter the longitude for the maps center point.", "js_composer")
+		    ),
+		    
+		  	array(
+		      "type" => "dropdown",
+		      "heading" => __("Map Zoom", "js_composer"),
+		      "param_name" => "zoom",
+		      'save_always' => true,
+		      "value" => array(__("14 - Default", "js_composer") => 14, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Eanble Zoom In/Out", "js_composer"),
+		      "param_name" => "enable_zoom",
+		      "description" => __("Do you want users to be able to zoom in/out on the map?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => true),
+		    ),
+		    
+		    array(
+		      "type" => "attach_image",
+		      "heading" => __("Marker Image", "js_composer"),
+		      "param_name" => "marker_image",
+		      "value" => "",
+		      "description" => __("Select image from media library.", "js_composer")
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Marker Animation", "js_composer"),
+		      "param_name" => "marker_animation",
+		      "description" => __("This will cause your markers to do a quick bounce as they load in.", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => true),
+		    ),
+		    
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Greyscale Color", "js_composer"),
+		      "param_name" => "map_greyscale",
+		      "description" => __("Toggle a greyscale color scheme (will also unlock further custom options)", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => true),
+		    ),
+		    array(
+				"type" => "colorpicker",
+				"class" => "",
+				"heading" => "Map Extra Color",
+				"param_name" => "map_color",
+				"value" => "",
+				"dependency" => Array('element' => "map_greyscale", 'not_empty' => true),
+				"description" => "Use this to define a main color that will be used in combination with the greyscale option for your map"
+			),
+			array(
+		      "type" => 'checkbox',
+		      "heading" => __("Ultra Flat Map", "js_composer"),
+		      "param_name" => "ultra_flat",
+		      "dependency" => Array('element' => "map_greyscale", 'not_empty' => true),
+		      "description" => __("This removes street/landmark text & some extra details for a clean look", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => true),
+		    ),
+		    array(
+		      "type" => 'checkbox',
+		      "heading" => __("Dark Color Scheme", "js_composer"),
+		      "param_name" => "dark_color_scheme",
+		      "dependency" => Array('element' => "map_greyscale", 'not_empty' => true),
+		      "description" => __("Enable this option for a dark colored map (This will override the extra color choice)", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => true),
+		    ),
+			
+		    array(
+		      "type" => "textarea",
+		      "heading" => __("Map Marker Locations", "js_composer"),
+		      "param_name" => "map_markers",
+		      "description" => __("Please enter the the list of locations you would like with a latitude|longitude|description format. <br/> Divide values with linebreaks (Enter). Example: <br/> 39.949|-75.171|Our Location <br/> 40.793|-73.954|Our Location #2", "js_composer")
+		    ),
+		    
+		  )
+		));
+
+
+
+
+
+
 
 	// Team Member
-	vc_lean_map('team_member', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/team_member.php');
-		
+		vc_map( array(
+		  "name" => __("Team Member", "js_composer"),
+		  "base" => "team_member",
+		  "icon" => "icon-wpb-team-member",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Add a team member element', 'js_composer'),
+		  "params" => array(
+		 	 array(
+		      "type" => "fws_image",
+		      "heading" => __("Image", "js_composer"),
+		      "param_name" => "image_url",
+		      "value" => "",
+		      "description" => __("Select image from media library.", "js_composer")
+		    ),
+		 	 array(
+		      "type" => "fws_image",
+		      "heading" => __("Bio Image", "js_composer"),
+		      "param_name" => "bio_image_url",
+		      "value" => "",
+		       "dependency" => Array('element' => "team_memeber_style", 'value' => array('bio_fullscreen')),
+		      "description" => __("<i>Image Size Guidelines</i>  <br/>  <strong>Bio Image:</strong> large with a portrait aspect ratio - will be shown at the full screen height at 50% of the page width. <br/> <strong>Team Small Image:</strong> Will display at 500x500 so ensure the image you're uploading is at least that size.", "js_composer")
+		    ),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Team Member Stlye", "js_composer"),
+			  "param_name" => "team_memeber_style",
+			  "value" => array(
+				 "Meta below" => "meta_below",
+				 "Meta overlaid" => "meta_overlaid",
+				 "Meta overlaid alt" => "meta_overlaid_alt",
+				 "Bio Shown Fullscreen Modal" => "bio_fullscreen"
+			   ),
+			  'save_always' => true,
+			  "description" => __("Please select the style you desire for your team member.", "js_composer")
+			),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Name", "js_composer"),
+		      "param_name" => "name",
+		      "admin_label" => true,
+		      "description" => __("Please enter the name of your team member", "js_composer")
+		    ),
+			array(
+		      "type" => "textfield",
+		      "heading" => __("Job Position", "js_composer"),
+		      "param_name" => "job_position",
+		      "admin_label" => true,
+		      "description" => __("Please enter the job position for your team member", "js_composer")
+		    ),
+		    array(
+		      "type" => "textarea",
+		      "heading" => __("Team Member Bio", "js_composer"),
+		      "param_name" => "team_member_bio",
+		      "description" => __("The main text portion of your team member", "js_composer"),
+		      "dependency" => Array('element' => "team_memeber_style", 'value' => array('bio_fullscreen'))
+		    ),
+		    array(
+		      "type" => "textarea",
+		      "heading" => __("Description", "js_composer"),
+		      "param_name" => "description",
+		      "description" => __("The main text portion of your team member", "js_composer"),
+		      "dependency" => Array('element' => "team_memeber_style", 'value' => array('meta_below'))
+		    ),
+		    array(
+		      "type" => "textarea",
+		      "heading" => __("Social Media", "js_composer"),
+		      "param_name" => "social",
+		      "dependency" => Array('element' => "team_memeber_style", 'value' => array('meta_below')),
+		      "description" => __("Enter any social media links with a comma separated list. e.g. Facebook,http://facebook.com, Twitter,http://twitter.com", "js_composer")
+		    ),
+		    array(
+			  "type" => "dropdown",
+			  "heading" => __("Team Member Link Type", "js_composer"),
+			  "param_name" => "link_element",
+			  "value" => array(
+				 "None" => "none",
+				 "Image" => "image",
+				 "Name" => "name",	
+				 "Both" => "both"
+			   ),
+			  'save_always' => true,
+			   "dependency" => Array('element' => "team_memeber_style", 'value' => array('meta_below')),
+			  "description" => __("Please select how you wish to link your team member to an arbitrary URL", "js_composer")
+			),
+			array(
+		      "type" => "textfield",
+		      "heading" => __("Team Member Link URL", "js_composer"),
+		      "param_name" => "link_url",
+		      "admin_label" => false,
+		      "description" => __("Please enter the URL for your team member link", "js_composer"),
+		      "dependency" => Array('element' => "link_element", 'value' => array('image', 'name', 'both'))
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Team Member Link URL", "js_composer"),
+		      "param_name" => "link_url_2",
+		      "admin_label" => false,
+		      "description" => __("Please enter the URL for your team member link", "js_composer"),
+		      "dependency" => Array('element' => "team_memeber_style", 'value' => array('meta_overlaid','meta_overlaid_alt')),
+		    ),
+		     array(
+			  "type" => "dropdown",
+			  "heading" => __("Link Color", "js_composer"),
+			  "param_name" => "color",
+			  "value" => array(
+				 "Accent-Color" => "Accent-Color",
+				 "Extra-Color-1" => "Extra-Color-1",
+				 "Extra-Color-2" => "Extra-Color-2",	
+				 "Extra-Color-3" => "Extra-Color-3"
+			   ),
+			  'save_always' => true,
+			   "dependency" => Array('element' => "team_memeber_style", 'value' => array('meta_below')),
+			  "description" => __("Please select the color you wish for your social links to display in.", "js_composer")
+			)
+		  )
+		));
+
+
+
 
 	// Fancy Box
 	class WPBakeryShortCode_Fancy_Box extends WPBakeryShortCode { }
-	vc_lean_map('fancy_box', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/fancy_box.php');
+		vc_map( array(
+		  "name" => __("Fancy Box", "js_composer"),
+		  "base" => "fancy_box",
+		  "icon" => "icon-wpb-fancy-box",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Add a fancy box element', 'js_composer'),
+		  "params" => array(
+		 	 array(
+		      "type" => "fws_image",
+		      "heading" => __("Image", "js_composer"),
+		      "param_name" => "image_url",
+		      "value" => "",
+		      "description" => __("Select a background image from the media library.", "js_composer")
+		    ),
+		    array(
+		      "type" => "textarea_html",
+		      "heading" => __("Box Content", "js_composer"),
+		      "param_name" => "content",
+		      "admin_label" => true,
+		      "description" => __("Please enter the text desired for your box", "js_composer")
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Link URL", "js_composer"),
+		      "param_name" => "link_url",
+		      "admin_label" => false,
+		      "description" => __("Please enter the URL you would like for your box to link to", "js_composer")
+		    ),
+		    array(
+		       "type" => "checkbox",
+			  "class" => "",
+			  "heading" => "Open Link In New Tab",
+			  "value" => array("Yes, please" => "true" ),
+			  "param_name" => "link_new_tab",
+			  "description" => "",
+		       "dependency" => Array('element' => "link_url", 'not_empty' => true)
+		    ),
+		     array(
+		      "type" => "textfield",
+		      "heading" => __("Link Text", "js_composer"),
+		      "param_name" => "link_text",
+		      "admin_label" => false,
+		      "description" => __("Please enter the text that will be displayed for your box link", "js_composer")
+		    ),
+		     array(
+		      "type" => "textfield",
+		      "heading" => __("Min Height", "js_composer"),
+		      "param_name" => "min_height",
+		      "admin_label" => false,
+		      "description" => __("Please enter the minimum height you would like for you box. Enter in number of pixels - Don't enter \"px\", default is \"300\"", "js_composer")
+		    ),
+		     array(
+			  "type" => "dropdown",
+			  "heading" => __("Link Color", "js_composer"),
+			  "param_name" => "color",
+			  "value" => array(
+				 "Accent-Color" => "Accent-Color",
+				 "Extra-Color-1" => "Extra-Color-1",
+				 "Extra-Color-2" => "Extra-Color-2",	
+				 "Extra-Color-3" => "Extra-Color-3"
+			   ),
+			  'save_always' => true,
+			  "description" => __("Please select the accent color for your box", "js_composer")
+			)
+		  )
+		));
+	
+	
+
 
 	// Flip Box
 	class WPBakeryShortCode_Nectar_Flip_Box extends WPBakeryShortCode { }
-	vc_lean_map('nectar_flip_box', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/flip-box.php');
+		vc_map( array(
+		  "name" => __("Flip Box", "js_composer"),
+		  "base" => "nectar_flip_box",
+		  "icon" => "icon-wpb-nectar-flip-box",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Add a flip box element', 'js_composer'),
+		  "params" => array(
+		  	array(
+		      "type" => "textarea",
+		      "heading" => __("Front Box Content", "js_composer"),
+		      "param_name" => "front_content",
+		      "description" => __("The text that will display on the front of your flip box", "js_composer"),
+		      "group" => 'Front Side'
+		    ),
+		 	  array(
+		      "type" => "fws_image",
+		      "heading" => __("Background Image", "js_composer"),
+		      "param_name" => "image_url_1",
+		      "value" => "",
+		      "group" => 'Front Side',
+		      "description" => __("Select a background image from the media library.", "js_composer")
+		    ),
+		 	array(
+				"type" => "colorpicker",
+				"class" => "",
+				"heading" => "Background Color",
+				"group" => 'Front Side',
+				"param_name" => "bg_color",
+				"value" => "",
+				"description" => ""
+			),
+			 array(
+		      "type" => 'checkbox',
+		      "heading" => __("BG Color overlay on BG Image", "js_composer"),
+		      "param_name" => "bg_color_overlay",
+		      "group" => 'Front Side',
+		      "description" => __("Checking this will overlay your BG color on your BG image", "js_composer"),
+		      "value" => Array(__("Yes", "js_composer") => 'true')
+		    ),
+			 array(
+				"type" => "dropdown",
+				"class" => "",
+				"group" => 'Front Side',
+				"heading" => "Text Color",
+				"param_name" => "text_color",
+				"value" => array(
+					"Dark" => "dark",
+					"Light" => "light"
+				),
+				'save_always' => true
+			),	 
+			 array(
+				'type' => 'dropdown',
+				'heading' => __( 'Icon library', 'js_composer' ),
+				"group" => 'Front Side',
+				'value' => array(
+					__( 'Font Awesome', 'js_composer' ) => 'fontawesome',
+					__( 'Iconsmind', 'js_composer' ) => 'iconsmind',
+					__( 'Linea', 'js_composer' ) => 'linea',
+					__( 'Steadysets', 'js_composer' ) => 'steadysets',
+				),
+				'param_name' => 'icon_family',
+				'description' => __( 'Select icon library.', 'js_composer' ),
+			),
+			array(
+		      "type" => "iconpicker",
+		      "heading" => __("Icon Above Title", "js_composer"),
+		      "param_name" => "icon_fontawesome",
+		      "group" => 'Front Side',
+		      "settings" => array( "emptyIcon" => true, "iconsPerPage" => 4000),
+		      "dependency" => Array('element' => "icon_family", 'value' => 'fontawesome'),
+		      "description" => __("Select icon from library.", "js_composer")
+		    ),
+		    array(
+		      "type" => "iconpicker",
+		      "heading" => __("Icon", "js_composer"),
+		      "param_name" => "icon_iconsmind",
+		      "group" => 'Front Side',
+		      "settings" => array( 'type' => 'iconsmind', 'emptyIcon' => false, "iconsPerPage" => 4000),
+		      "dependency" => array('element' => "icon_family", 'value' => 'iconsmind'),
+		      "description" => __("Select icon from library.", "js_composer")
+		    ),
+		    array(
+		      "type" => "iconpicker",
+		      "heading" => __("Icon Above Title", "js_composer"),
+		      "param_name" => "icon_linea",
+		      "group" => 'Front Side',
+		      "settings" => array( 'type' => 'linea', "emptyIcon" => true, "iconsPerPage" => 4000),
+		      "dependency" => Array('element' => "icon_family", 'value' => 'linea'),
+		      "description" => __("Select icon from library.", "js_composer")
+		    ),
+		    array(
+		      "type" => "iconpicker",
+		      "heading" => __("Icon", "js_composer"),
+		      "param_name" => "icon_steadysets",
+		      "group" => 'Front Side',
+		      "settings" => array( 'type' => 'steadysets', 'emptyIcon' => false, "iconsPerPage" => 4000),
+		      "dependency" => array('element' => "icon_family", 'value' => 'steadysets'),
+		      "description" => __("Select icon from library.", "js_composer")
+		    ),
+		    array(
+				"type" => "dropdown",
+				"class" => "",
+				'save_always' => true,
+				"heading" => "Icon Color",
+				"param_name" => "icon_color",
+				"group" => 'Front Side',
+				"value" => array(
+					"Accent-Color" => "Accent-Color",
+					"Extra-Color-1" => "Extra-Color-1",
+					"Extra-Color-2" => "Extra-Color-2",	
+					"Extra-Color-3" => "Extra-Color-3",
+					"Extra-Color-Gradient-1" => "extra-color-gradient-1",
+			 		"Extra-Color-Gradient-2" => "extra-color-gradient-2"
+				),
+				"description" => ""
+			),
+			array(
+		      "type" => "textfield",
+		      "group" => 'Front Side',
+		      "heading" => __("Icon Size", "js_composer"),
+		      "param_name" => "icon_size",
+		      "description" => __("Please enter the size for your icon. Enter in number of pixels - Don't enter \"px\", default is \"60\"", "js_composer"),
+		      "group" => 'Front Side'
+		    ),
+			array(
+		      "type" => "textarea_html",
+		      "heading" => __("Back Box Content", "js_composer"),
+		      "param_name" => "content",
+		      "admin_label" => true,
+		      "group" => 'Back Side',
+		      "description" => __("The content that will display on the back of your flip box", "js_composer")
+		    ),	
+		     array(
+		      "type" => "fws_image",
+		      "heading" => __("Background Image", "js_composer"),
+		      "param_name" => "image_url_2",
+		      "value" => "",
+		      "group" => 'Back Side',
+		      "description" => __("Select a background image from the media library.", "js_composer")
+		    ),
+		     array(
+				"type" => "colorpicker",
+				"class" => "",
+				"heading" => "Background Color",
+				"group" => 'Back Side',
+				"param_name" => "bg_color_2",
+				"value" => "",
+				"description" => ""
+			),
+		     array(
+		      "type" => 'checkbox',
+		      "heading" => __("BG Color overlay on BG Image", "js_composer"),
+		      "param_name" => "bg_color_overlay_2",
+		      "group" => 'Back Side',
+		      "description" => __("Checking this will overlay your BG color on your BG image", "js_composer"),
+		      "value" => Array(__("Yes", "js_composer") => 'true')
+		    ),
+		     array(
+				"type" => "dropdown",
+				"class" => "",
+				"group" => 'Back Side',
+				"heading" => "Text Color",
+				"param_name" => "text_color_2",
+				"value" => array(
+					"Dark" => "dark",
+					"Light" => "light"
+				),
+				'save_always' => true
+			), 
+		     array(
+		      "type" => "textfield",
+		      "heading" => __("Min Height", "js_composer"),
+		      "param_name" => "min_height",
+		      "admin_label" => false,
+		      "group" => 'General Settings',
+		      "description" => __("Please enter the minimum height you would like for you box. Enter in number of pixels - Don't enter \"px\", default is \"300\"", "js_composer")
+		    ),
 
+			array(
+				"type" => "dropdown",
+				"class" => "",
+				'save_always' => true,
+				"heading" => "Horizontal Content Alignment",
+				"param_name" => "h_text_align",
+				"group" => 'General Settings',
+				"value" => array(
+					"Left" => "left",
+					"Center" => "center",
+					"Right" => "right"
+				)
+			),
+			array(
+				"type" => "dropdown",
+				"class" => "",
+				'save_always' => true,
+				"heading" => "Vertical Content Alignment",
+				"param_name" => "v_text_align",
+				"group" => 'General Settings',
+				"value" => array(
+					"Top" => "top",
+					"Center" => "center",
+					"Bottom" => "bottom"
+				)
+			),
+
+			array(
+				"type" => "dropdown",
+				"class" => "",
+				'save_always' => true,
+				"heading" => "Flip Direction",
+				"param_name" => "flip_direction",
+				"group" => 'General Settings',
+				"value" => array(
+					"Horizontal To Left" => "horizontal-to-left",
+					"Horizontal To Right" => "horizontal-to-right",
+					"Vertical To Bottom" => "vertical-to-bottom",
+					"Vertical To Top" => "vertical-to-top"
+				)
+			),
+			 /*array(
+		      "type" => "dropdown",
+		      "heading" => __("Box Shadow", "js_composer"),
+		      'save_always' => true,
+		      "param_name" => "box_shadow",
+		      "group" => 'General Settings',
+		      "value" => array(__("None", "js_composer") => "none", _("Light Visibility", "js_composer") => "light_visibility", _("Heavy Visibility", "js_composer") => "heavy_visibility"),
+		      "description" => __("Select your desired image box shadow", "js_composer")
+		    )*/
+		  )
+		));
 
 	// Gradient Text
 	class WPBakeryShortCode_Nectar_Gradient_Text extends WPBakeryShortCode { }
-	vc_lean_map('nectar_gradient_text', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/gradient-text.php');
+		vc_map( array(
+		  "name" => __("Gradient Text", "js_composer"),
+		  "base" => "nectar_gradient_text",
+		  "icon" => "icon-wpb-nectar-gradient-text",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Add text with gradient coloring', 'js_composer'),
+		  "params" => array(
+		  	array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"heading" => "Heading Tag",
+			"param_name" => "heading_tag",
+			"value" => array(
+				"H1" => "h1",
+				"H2" => "h2",
+				"H3" => "h3",
+				"H4" => "h4",
+				"H5" => "h5",
+				"H6" => "h6"
+			)),
+		    array(
+				"type" => "dropdown",
+				"class" => "",
+				'save_always' => true,
+				"heading" => "Text Color",
+				"param_name" => "color",
+				"admin_label" => false,
+				"value" => array(
+					"Extra-Color-Gradient-1" => "extra-color-gradient-1",
+			 		"Extra-Color-Gradient-2" => "extra-color-gradient-2"
+				),
+				"description" => "Will fallback to the first color of the gardient on non webkit browsers"
+			),
+			array(
+				"type" => "dropdown",
+				"class" => "",
+				'save_always' => true,
+				"heading" => "Gradient Direction",
+				"param_name" => "gradient_direction",
+				"admin_label" => false,
+				"value" => array(
+					"Horizontal" => "horizontal",
+			 		"Diagonal" => "diagonal"
+				),
+				"description" => "Select your desired gradient direction"
+			),
+			array(
+		      "type" => "textarea",
+		      "heading" => __("Text Content", "js_composer"),
+		      "param_name" => "text",
+		      "admin_label" => true,
+		      "description" => __("The text that will display with gradient coloring", "js_composer")
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Margin <span>Top</span>", "js_composer"),
+		      "param_name" => "margin_top",
+		      "edit_field_class" => "col-md-2",
+		      "description" => __("." , "js_composer")
+		    ),
+			 array(
+		      "type" => "textfield",
+		      "heading" => __("<span>Right</span>", "js_composer"),
+		      "param_name" => "margin_right",
+		      "edit_field_class" => "col-md-2",
+		      "description" => __("" , "js_composer")
+		    ),
+			array(
+		      "type" => "textfield",
+		      "heading" => __("<span>Bottom</span>", "js_composer"),
+		      "param_name" => "margin_bottom",
+		      "edit_field_class" => "col-md-2",
+		      "description" => __("" , "js_composer")
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("<span>Left</span>", "js_composer"),
+		      "param_name" => "margin_left",
+		      "edit_field_class" => "col-md-2",
+		      "description" => __("" , "js_composer")
+		    ),
+		 	 
+		  )
+		));
 	
 	
 	// Hotspot
 	class WPBakeryShortCode_Nectar_Image_With_Hotspots extends WPBakeryShortCode { }
-	vc_lean_map('nectar_image_with_hotspots', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_image_with_hotspots.php');
-		
+
+		vc_map( array(
+		  "name" => __("Image With Hotspots", "js_composer"),
+		  "base" => "nectar_image_with_hotspots",
+		  "weight" => 2,
+		  "icon" => "icon-wpb-single-image",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Add Hotspots On Your Image', 'js_composer'),
+		  "params" => array(
+
+		  	array(
+				"type" => "attach_image",
+				"class" => "",
+				"heading" => "Image",
+				"value" => "",
+				"param_name" => "image",
+				"description" => "Choose your image that will show the hotspots. <br/> You can then click on the image in the preview area to add your hotspots in the desired locations."
+			),
+			array(
+		      "type" => "hotspot_image_preview",
+		      "heading" => __("Preview", "js_composer"),
+		      "param_name" => "preview",
+		      "description" => __("Click to add - Drag to move - Edit content below <br/><br/> Note: this preview will not reflect hotspot style choices or show tooltips. <br/>This is only used as a visual guide for positioning. <br/><strong>Requires Salient VC 4.12 or higher</strong>", "js_composer"),
+		      "value" => ''
+		    ),	
+			 array(
+		      "type" => "textarea_html",
+		      "heading" => __("Hotspots", "js_composer"),
+		      "param_name" => "content",
+		      "description" => __("", "js_composer"),
+		    ),	 
+
+			/*array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"group" => "Style",
+			"heading" => "Hotspot Style",
+			"param_name" => "style",
+			"description" => __("Select the overall style of your hotspots here", "js_composer"),
+			"value" => array(
+				"Color Pulse" => "color_pulse",
+				"Transparent + Border" => "border"
+			)),*/
+			array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"group" => "Style",
+			"heading" => "Color",
+			"admin_label" => true,
+			"param_name" => "color_1",
+			"description" => __("Choose the color which the hotspot will use", "js_composer"),
+			/*"dependency" => array('element' => "style", 'value' => 'color_pulse'),*/
+			"value" => array(
+				"Accent-Color" => "Accent-Color",
+				"Extra-Color-1" => "Extra-Color-1",
+				"Extra-Color-2" => "Extra-Color-2",	
+				"Extra-Color-3" => "Extra-Color-3"
+			)),
+			/*array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"group" => "Style",
+			"heading" => "Color",
+			"param_name" => "color_2",
+			"description" => __("Choose the color which the hotspot will use", "js_composer"),
+			"dependency" => array('element' => "style", 'value' => 'border'),
+			"value" => array(
+				"Light" => "light",
+				"Dark" => "dark",
+			)),*/
+			array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"group" => "Style",
+			"heading" => "Hotspot Icon",
+			"description" => __("The icon that will be shown on the hotspots", "js_composer"),
+			"param_name" => "hotspot_icon",
+			"admin_label" => true,
+			"value" => array(
+				"Plus Sign" => "plus_sign",
+				"Numerical" => "numerical"
+			)),
+			/*array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"group" => "Style",
+			"heading" => "Hotspot Size",
+			"param_name" => "size",
+			"description" => __("Select the size of your hotspots here", "js_composer"),
+			"value" => array(
+				"Small" => "small",
+				"Medium" => "medium",
+				"Large" => "large"
+			)),*/
+			array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"group" => "Style",
+			"heading" => "Tooltip Functionality",
+			"param_name" => "tooltip",
+			"description" => __("Select how you want your tooltips to display to the user", "js_composer"),
+			"value" => array(
+				"Show On Hover" => "hover",
+				"Show On Click" => "click",
+				"Always Show" => "always_show"
+			)),
+			array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"group" => "Style",
+			"heading" => "Tooltip Shadow",
+			"param_name" => "tooltip_shadow",
+			"description" => __("Select the shadow size for your tooltip", "js_composer"),
+			"value" => array(__("None", "js_composer") => "none", __("Small Depth", "js_composer") => "small_depth", __("Medium Depth", "js_composer") => "medium_depth", __("Large Depth", "js_composer") => "large_depth"),
+			),
+			array(
+		      "type" => 'checkbox',
+		      "heading" => __("Enable Animation", "js_composer"),
+		      "param_name" => "animation",
+		      "group" => "Style",
+		      "description" => __("Turning this on will make your hotspots animate in when the user scrolls to the element", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true')
+		    )
+		  )
+		));
 	
-	class WPBakeryShortCode_Nectar_Hotspot extends WPBakeryShortCode { }
-	vc_lean_map('nectar_hotspot', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_hotspot.php');
+
+		class WPBakeryShortCode_Nectar_Hotspot extends WPBakeryShortCode { }
+
+		vc_map( array(
+		  "name" => __("Nectar Hotspot", "js_composer"),
+		  "base" => "nectar_hotspot",
+		  "allowed_container_element" => 'vc_row',
+		  "content_element" => false,
+		  "params" => array(
+		    array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"heading" => "Position",
+			"param_name" => "position",
+			"value" => array(
+				"top" => "top",
+				"right" => "right",
+				"bottom" => "bottom",
+				"left" => "left",
+			)),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Left", "js_composer"),
+		      "param_name" => "left"
+		    ),
+		    array(
+		      "type" => "textfield",
+		      "heading" => __("Top", "js_composer"),
+		      "param_name" => "top"
+		    ),
+		    array(
+		      "type" => "textarea_html",
+		      "heading" => __("Content", "js_composer"),
+		      "param_name" => "content",
+		      "description" => __("", "js_composer"),
+		    )
+		  )
+		
+		));
 
 
 	// Fancy Title
 	class WPBakeryShortCode_Nectar_Animated_Title extends WPBakeryShortCode { }
-	vc_lean_map('nectar_animated_title', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/fancy-title.php');
-	
-	
-	// Single Testimonial
-	class WPBakeryShortCode_Nectar_Single_Testimonial extends WPBakeryShortCode { }
-	vc_lean_map('nectar_single_testimonial', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_single_testimonial.php');
-	
+		vc_map( array(
+		  "name" => __("Animated Title", "js_composer"),
+		  "base" => "nectar_animated_title",
+		  "icon" => "icon-wpb-nectar-gradient-text",
+		  "category" => __('Nectar Elements', 'js_composer'),
+		  "description" => __('Add a title with animation', 'js_composer'),
+		  "params" => array(
+		  	array(
+			"type" => "dropdown",
+			"class" => "",
+			'save_always' => true,
+			"heading" => "Heading Tag",
+			"param_name" => "heading_tag",
+			"value" => array(
+				"H6" => "h6",
+				"H5" => "h5",
+				"H4" => "h4",
+				"H3" => "h3",
+				"H2" => "h2",
+				"H1" => "h1"
+			)),
+			array(
+				"type" => "dropdown",
+				"class" => "",
+				'save_always' => true,
+				"heading" => "Title Style",
+				"param_name" => "style",
+				"admin_label" => false,
+				"value" => array(
+					"Color Strip Reveal" => "color-strip-reveal",
+					"Hinge Drop" => "hinge-drop",
+				),
+				"description" => "Gradient colors are only available for compatible effects"
+			),
+		    array(
+				"type" => "dropdown",
+				"class" => "",
+				'save_always' => true,
+				"heading" => "Background Color",
+				"param_name" => "color",
+				"admin_label" => false,
+				"value" => array(
+					"Accent-Color" => "Accent-Color",
+					"Extra-Color-1" => "Extra-Color-1",
+					"Extra-Color-2" => "Extra-Color-2",	
+					"Extra-Color-3" => "Extra-Color-3"
+				),
+				"description" => ""
+			),
+			array(
+				"type" => "colorpicker",
+				"class" => "",
+				"heading" => "Text Color",
+				"param_name" => "text_color",
+				"value" => "#ffffff",
+				"description" => "Select the color your text will display in"
+			),
+			array(
+		      "type" => "textfield",
+		      "heading" => __("Text Content", "js_composer"),
+		      "param_name" => "text",
+		      "admin_label" => true,
+		      "description" => __("Enter your fancy title text here", "js_composer")
+		    )
+		 	 
+		  )
+		));
 
 	require_once vc_path_dir('SHORTCODES_DIR', 'vc-accordion.php');
 	require_once vc_path_dir('SHORTCODES_DIR', 'vc-accordion-tab.php');
 
 	/* Accordion block
 	---------------------------------------------------------- */
-	vc_lean_map('toggles', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/toggles.php');
-	vc_lean_map('toggle', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/toggle.php');
-	
+	vc_map( array(
+	  "name" => __("Toggle Panels", "js_composer"),
+	  "base" => "toggles",
+	  "show_settings_on_create" => false,
+	  "is_container" => true,
+	  "icon" => "icon-wpb-ui-accordion",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('jQuery toggles/accordion', 'js_composer'),
+	  "params" => array(
+	  	array(
+		  "type" => "dropdown",
+		  "heading" => __("Style", "js_composer"),
+		  "param_name" => "style",
+		  "admin_label" => true,
+		  "value" => array(
+			 "Default" => "default",
+			 "Minimal" => "minimal",
+		   ),
+		  'save_always' => true,
+		  "description" => __("Please select the style you desire for your toggle element.", "js_composer")
+		),
+	    array(
+	      "type" => 'checkbox',
+	      "heading" => __("Allow collapsible all", "js_composer"),
+	      "param_name" => "accordion",
+	      "description" => __("Select checkbox to turn the toggles in an accordion.", "js_composer"),
+	      "value" => Array(__("Allow", "js_composer") => 'true')
+	    )
+	  ),
+	  "custom_markup" => '
+	  <div class="wpb_accordion_holder wpb_holder clearfix vc_container_for_children">
+	  %content%
+	  </div>
+	  <div class="tab_controls">
+	 <a class="add_tab" title="' . __( 'Add section', 'js_composer' ) . '"><span class="vc_icon"></span> <span class="tab-label">' . __( 'Add section', 'js_composer' ) . '</span></a>
+	  </div>
+	  ',
+	  'default_content' => '
+	  [toggle title="'.__('Section', "js_composer").'"][/toggle]
+	  [toggle title="'.__('Section', "js_composer").'"][/toggle]
+	  ',
+	  'js_view' => 'VcAccordionView'
+	));
+	vc_map( array(
+	  "name" => __("Section", "js_composer"),
+	  "base" => "toggle",
+	  "allowed_container_element" => 'vc_row',
+	  "is_container" => true,
+	  "content_element" => false,
+	  "params" => array(
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Title", "js_composer"),
+	      "param_name" => "title",
+	      "description" => __("Accordion section title.", "js_composer")
+	    ),
+	     array(
+		  "type" => "dropdown",
+		  "heading" => __("Color", "js_composer"),
+		  "param_name" => "color",
+		  "admin_label" => true,
+		  "value" => array(
+		     "Default" => "Default",
+			 "Accent-Color" => "Accent-Color",
+			 "Extra-Color-1" => "Extra-Color-1",
+			 "Extra-Color-2" => "Extra-Color-2",	
+			 "Extra-Color-3" => "Extra-Color-3"
+		   ),
+		  'save_always' => true,
+		  "description" => __("Please select the color you wish for your toggle to display in.", "js_composer")
+		)
+	  ),
+	  'js_view' => 'VcAccordionTabView'
+	) );
+
+
 
 
 
@@ -2269,14 +4485,201 @@ function nectar_custom_maps() {
 
 	/* Tabs
 	---------------------------------------------------------- */
-	vc_lean_map('tabbed_section', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/tabbed_section.php');
-	vc_lean_map('tab', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/tab.php');
+	$tab_id_1 = time().'-1-'.rand(0, 100);
+	$tab_id_2 = time().'-2-'.rand(0, 100);
+	vc_map( array(
+	  "name"  => __("Tabs", "js_composer"),
+	  "base" => "tabbed_section",
+	  "show_settings_on_create" => false,
+	  "is_container" => true,
+	  "icon" => "icon-wpb-ui-tab-content",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Tabbed content', 'js_composer'),
+	  "params" => array(
+	  	 array(
+		  "type" => "dropdown",
+		  "heading" => __("Style", "js_composer"),
+		  "param_name" => "style",
+		  "admin_label" => true,
+		  "value" => array(
+			 "Default" => "default",
+			 "Minimal" => "minimal",
+			 "Vertical" => "vertical"
+		   ),
+		  'save_always' => true,
+		  "description" => __("Please select the style you desire for your tabbed element.", "js_composer")
+		),
+	  	 array(
+		  "type" => "dropdown",
+		  "heading" => __("Alignment", "js_composer"),
+		  "param_name" => "alignment",
+		  "admin_label" => false,
+		  "value" => array(
+			 "Left" => "left",
+			 "Center" => "center",
+			 "Right" => "right"
+		   ),
+		  'save_always' => true,
+		  "dependency" => Array('element' => "style", 'value' => array('minimal','default')),
+		  "description" => __("Please select your tabbed alignment", "js_composer")
+		),
+
+	  	array(
+	      "type" => "textfield",
+	      "heading" => __("Optional CTA button", "js_composer"),
+	      "param_name" => "cta_button_text",
+	      "description" => __("If you wish to include an optional CTA button on your tabbed nav, enter the text here", "js_composer"),
+	       "admin_label" => false,
+	      "dependency" => Array('element' => "style", 'value' => array('minimal'))
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("CTA button link", "js_composer"),
+	      "param_name" => "cta_button_link",
+	      "description" => __("Enter a URL for your button link here", "js_composer"),
+	       "admin_label" => false,
+	      "dependency" => Array('element' => "style", 'value' => array('minimal'))
+	    ),
+	     array(
+		  "type" => "dropdown",
+		  "heading" => __("CTA Button Color", "js_composer"),
+		  "param_name" => "cta_button_style",
+		  "admin_label" => false,
+		  "value" => array(
+			 "Accent-Color" => "accent-color",
+			 "Extra-Color-1" => "extra-color-1",
+			 "Extra-Color-2" => "extra-color-2",
+			 "Extra-Color-3" => "extra-color-3",
+		   ),
+		  'save_always' => true,
+		  "description" => __("Please select the style for your optional CTA button", "js_composer"),
+		   "dependency" => Array('element' => "style", 'value' => array('minimal'))
+		),
+
+
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Extra class name", "js_composer"),
+	      "param_name" => "el_class",
+	      "description" => __("If you wish to style particular content element differently, then use this field to add a class name and then refer to it in your css file.", "js_composer")
+	    )
+	  ),
+	  "custom_markup" => '
+	  <div class="wpb_tabs_holder wpb_holder vc_container_for_children">
+	  <ul class="tabs_controls">
+	  </ul>
+	  %content%
+	  </div>'
+	  ,
+	  'default_content' => '
+	  [tab title="'.__('Tab','js_composer').'" id="'.$tab_id_1.'"] I am text block. Click edit button to change this text. [/tab]
+	  [tab title="'.__('Tab','js_composer').'" id="'.$tab_id_2.'"] I am text block. Click edit button to change this text. [/tab]
+	  ',
+	  "js_view" => ($vc_is_wp_version_3_6_more ? 'VcTabsView' : 'VcTabsView35')
+	));
+
+
+	vc_map( array(
+	  "name" => __("Tab", "js_composer"),
+	  "base" => "tab",
+	  "allowed_container_element" => 'vc_row',
+	  "is_container" => true,
+	  "content_element" => false,
+	  "params" => array(
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Title", "js_composer"),
+	      "param_name" => "title",
+	      "description" => __("Tab title.", "js_composer")
+	    ),
+	    array(
+	      "type" => "tab_id",
+	      "heading" => __("Tab ID", "js_composer"),
+	      "param_name" => "id"
+	    )
+	  ),
+	  'js_view' => ($vc_is_wp_version_3_6_more ? 'VcTabView' : 'VcTabView35')
+	));
+
 
 
 
 	class WPBakeryShortCode_Testimonial_Slider extends WPBakeryShortCode_Tabbed_Section { }
 
-	vc_lean_map('testimonial_slider', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/testimonial_slider.php');
+	$tab_id_1 = time().'-1-'.rand(0, 100);
+	$tab_id_2 = time().'-2-'.rand(0, 100);
+	vc_map( array(
+	  "name"  => __("Testiomonial Slider", "js_composer"),
+	  "base" => "testimonial_slider",
+	  "show_settings_on_create" => false,
+	  "is_container" => true,
+	  "icon" => "icon-wpb-testimonial-slider",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('An appealing testmonial slider.', 'js_composer'),
+	  "params" => array(
+	  	 array(
+		  "type" => "dropdown",
+		  "heading" => __("Style", "js_composer"),
+		  "param_name" => "style",
+		  "admin_label" => false,
+		  "value" => array(
+			 "Basic (Default)" => "default",
+			 "Minimal" => "minimal",
+			 "Multiple Visible" => "multiple_visible",
+		   ),
+		  'save_always' => true,
+		  "description" => __("Please select the style for your testimonial slider", "js_composer")
+		),
+	  	array(
+		  "type" => "dropdown",
+		  "heading" => __("Color", "js_composer"),
+		  "param_name" => "color",
+		  "admin_label" => false,
+		  "value" => array(
+			 "Inherit (Default)" => "default",
+			 "Accent Color + Light Text" => "accent-color-light",
+			 "Extra Color 1 + Light Text" => "extra-color-1-light",
+			 "Extra Color 2 + Light Text" => "extra-color-2-light",
+			 "Extra Color 3 + Light Text" => "extra-color-3-light",
+			 "Accent Color + Dark Text" => "accent-color-dark",
+			 "Extra Color 1 + Dark Text" => "extra-color-1-dark",
+			 "Extra Color 2 + Dark Text" => "extra-color-2-dark",
+			 "Extra Color 3 + Dark Text" => "extra-color-3-dark"
+		   ),
+		  'save_always' => true,
+		  "dependency" => Array('element' => "style", 'value' => array('multiple_visible')),
+		  "description" => __("Please select the color you would like for your testimonial slider. <br/> The Inherit value will react based on the row Text Color when set to light or dark.", "js_composer")
+		),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Auto rotate?", "js_composer"),
+	      "param_name" => "autorotate",
+	      "value" => '',
+	      "description" => __("If you would like this to autorotate, enter the rotation speed in miliseconds here. i.e 5000", "js_composer")
+	    ),
+	    array(
+	      "type" => "checkbox",
+		  "class" => "",
+		  "heading" => "Disable height animation?",
+		  "value" => array("Yes, please" => "true" ),
+		  "param_name" => "disable_height_animation",
+		   "dependency" => Array('element' => "style", 'value' => array('default','minimal')),
+		  "description" => "Your testimonial slider will animate the height of itself to match the height of the testimonial being shown - this will remove that and simply set the height equal to the tallest testimonial to allow your content below to remain stagnant instead of moving up/down."
+	    )
+	  ),
+	  "custom_markup" => '
+	  <div class="wpb_tabs_holder wpb_holder vc_container_for_children">
+	  <ul class="tabs_controls">
+	  </ul>
+	  %content%
+	  </div>'
+	  ,
+	  'default_content' => '
+	  [testimonial title="'.__('Testimonial','js_composer').'" id="'.$tab_id_1.'"] Click the edit button to add your testimonial. [/testimonial]
+	  [testimonial title="'.__('Testimonial','js_composer').'" id="'.$tab_id_2.'"] Click the edit button to add your testimonial. [/testimonial]
+	  ',
+	  "js_view" => ($vc_is_wp_version_3_6_more ? 'VcTabsView' : 'VcTabsView35')
+	));
 
 
 	class WPBakeryShortCode_Testimonial extends WPBakeryShortCode {
@@ -2287,24 +4690,128 @@ function nectar_custom_maps() {
 		
 	}
 
-	vc_lean_map('testimonial', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/testimonial.php');
 
-	
-	//adding back in default VC elements
-	$vc_config_path = vc_path_dir( 'CONFIG_DIR' );
-	if(version_compare(WPB_VC_VERSION,'5.0','>=')) {
-    	vc_lean_map( 'vc_widget_sidebar', null, $vc_config_path . '/structure/shortcode-vc-widget-sidebar.php' );
-    }
 
-    vc_lean_map( 'vc_wp_custommenu', null,  $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/shortcode-vc-wp-custommenu.php' );
-	
+	vc_map( array(
+	  "name" => __("Testimonial", "js_composer"),
+	  "base" => "testimonial",
+	  "allowed_container_element" => 'vc_row',
+	  "is_container" => true,
+	  "content_element" => false,
+	  "params" => array(
+	  	array(
+			"type" => "attach_image",
+			"class" => "",
+			"heading" => "Image",
+			"value" => "",
+			"param_name" => "image",
+			"description" => "Add an optional image for the person/company who supplied the testimonial"
+		),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Name", "js_composer"),
+	      "param_name" => "name",
+	      "admin_label" => true,
+	      "description" => __("Name or source of the testimonial", "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Subtitle", "js_composer"),
+	      "param_name" => "subtitle",
+	      "admin_label" => false,
+	      "description" => __("The optional subtitle that will follow the testimonial name", "js_composer")
+	    ),
+	    array(
+	      "type" => "textarea",
+	      "heading" => __("Quote", "js_composer"),
+	      "param_name" => "quote",
+	      "description" => __("The testimonial quote", "js_composer")
+	    ),
+	    array(
+	      "type" => "tab_id",
+	      "heading" => __("Testimonial ID", "js_composer"),
+	      "param_name" => "id"
+	    )
+	  ),
+	  'js_view' => ($vc_is_wp_version_3_6_more ? 'VcTabView' : 'VcTabView35')
+	));
+
+
+
+
+
+
+
+
 
 	/* clients slider */
 	class WPBakeryShortCode_Clients extends WPBakeryShortCode_Tabbed_Section { }
 
-	vc_lean_map('clients', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/clients.php');
+	$tab_id_1 = time().'-1-'.rand(0, 100);
+	$tab_id_2 = time().'-2-'.rand(0, 100);
+	vc_map( array(
+	  "name"  => __("Clients Display", "js_composer"),
+	  "base" => "clients",
+	  "show_settings_on_create" => false,
+	  "is_container" => true,
+	  "icon" => "icon-wpb-clients",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Show off your clients!', 'js_composer'),
+	  "params" => array(
+	    array(
+	      "type" => "dropdown",
+	      "heading" => __("Columns", "js_composer"),
+	      "param_name" => "columns",
+	      "value" => array(
+				"Two" => "2",
+				"Three" => "3",	
+				"Four" => "4",
+				"Five" => "5",
+				"Six" => "6"
+			),
+	      'save_always' => true,
+	      "description" => __("Please select how many columns you would like..", "js_composer")
+	    ),
+	    array(
+	      "type" => "checkbox",
+		  "class" => "",
+		  "heading" => "Fade In One By One?",
+		  "value" => array("Yes, please" => "true" ),
+		  "param_name" => "fade_in_animation",
+		  "description" => ""
+	    ),
+	    array(
+	      "type" => "checkbox",
+		  "class" => "",
+		  "heading" => "Turn Into Carousel",
+		  "value" => array("Yes, please" => "true" ),
+		  "param_name" => "carousel",
+		  "description" => ""
+	    ),
+	    array(
+	      "type" => "checkbox",
+		  "class" => "",
+		  "heading" => "Disable Autorotate?",
+		  "value" => array("Yes, please" => "true" ),
+		  "param_name" => "disable_autorotate",
+		  "dependency" => Array('element' => "carousel", 'not_empty' => true),
+		  "description" => ""
+	    )
+	  ),
+	  "custom_markup" => '
+	  <div class="wpb_tabs_holder wpb_holder vc_container_for_children">
+	  <ul class="tabs_controls">
+	  </ul>
+	  %content%
+	  </div>'
+	  ,
+	  'default_content' => '
+	  [client title="'.__('Client','js_composer').'" id="'.$tab_id_1.'"] Click the edit button to add your testimonial. [/client]
+	  [client title="'.__('Client','js_composer').'" id="'.$tab_id_2.'"] Click the edit button to add your testimonial. [/client]
+	  ',
+	  "js_view" => ($vc_is_wp_version_3_6_more ? 'VcTabsView' : 'VcTabsView35')
+	));
 
-	
 
 	class WPBakeryShortCode_Client extends WPBakeryShortCode {
 		
@@ -2314,17 +4821,124 @@ function nectar_custom_maps() {
 		
 	}
 
-	vc_lean_map('client', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/client.php');
+
+
+	vc_map( array(
+	  "name" => __("Client", "js_composer"),
+	  "base" => "client",
+	  "allowed_container_element" => 'vc_row',
+	  "is_container" => true,
+	  "content_element" => false,
+	  "params" => array(
+	    array(
+	      "type" => "fws_image",
+	      "heading" => __("Image", "js_composer"),
+	      "param_name" => "image",
+	      "value" => "",
+	      "description" => __("Select image from media library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("URL", "js_composer"),
+	      "param_name" => "url",
+	      "description" => __("Add an optional link to your client", "js_composer")
+	    ),
+	    array(
+	      "admin_label" => true,
+	      "type" => "textfield",
+	      "heading" => __("Client Name", "js_composer"),
+	      "param_name" => "name",
+	      "description" => __("Fill this out to keep track of which client is which in your page builder interface.", "js_composer")
+	    )
+	  ),
+	  'js_view' => ($vc_is_wp_version_3_6_more ? 'VcTabView' : 'VcTabView35')
+	));
 
 	
+
 
 
 	/* icon list */
 	class WPBakeryShortCode_Nectar_Icon_List extends WPBakeryShortCode_Tabbed_Section { }
 
-	vc_lean_map('nectar_icon_list', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_icon_list.php');
+	$tab_id_1 = time().'-1-'.rand(0, 100);
+	$tab_id_2 = time().'-2-'.rand(0, 100);
+	vc_map( array(
+	  "name"  => __("Icon List", "js_composer"),
+	  "base" => "nectar_icon_list",
+	  "show_settings_on_create" => false,
+	  "is_container" => true,
+	  "icon" => "icon-wpb-fancy-ul",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Create an icon list', 'js_composer'),
+	  "params" => array(
+	   
+	    array(
+	      "type" => "checkbox",
+		  "class" => "",
+		  "heading" => "Animate Element?",
+		  "value" => array("Yes, please" => "true" ),
+		  "param_name" => "animate",
+		  "description" => ""
+	    ),
+	     array(
+			"type" => "dropdown",
+			"class" => "",
+			"heading" => "Icon Color",
+			"param_name" => "color",
+			"value" => array(
+				"Default" => "default",
+				"Accent-Color" => "Accent-Color",
+				"Extra-Color-1" => "Extra-Color-1",
+				"Extra-Color-2" => "Extra-Color-2",	
+				"Extra-Color-3" => "Extra-Color-3",
+				"Extra-Color-Gradient-1" => "extra-color-gradient-1",
+				"Extra-Color-Gradient-2" => "extra-color-gradient-2"
+			),
+			'save_always' => true,
+			"description" => ""
+		),
 
-	
+	    array(
+	      "type" => "dropdown",
+	      "heading" => __("Icon Size", "js_composer"),
+	      "param_name" => "icon_size",
+	      "value" => array(
+				"Small" => "small",
+				"Medium" => "medium",
+				"Large" => "large"
+			),
+	      'save_always' => true,
+	      "description" => __("Please select the direction you would like your list items to display in", "js_composer")
+	    ),
+
+	    array(
+	      "type" => "dropdown",
+	      "heading" => __("Icon Style", "js_composer"),
+	      "param_name" => "icon_style",
+	      "value" => array(
+				"Icon Colored W/ Border" => "border",
+				"Icon Colored No Border" => "no-border"
+			),
+	      'save_always' => true,
+	      "description" => __("Please select the direction you would like your list items to display in", "js_composer")
+	    ),
+
+	  ),
+	  "custom_markup" => '
+	  <div class="wpb_tabs_holder wpb_holder vc_container_for_children">
+	  <ul class="tabs_controls">
+	  </ul>
+	  %content%
+	  </div>'
+	  ,
+	  'default_content' => '
+	  [nectar_icon_list_item title="'.__('List Item','js_composer').'" id="'.$tab_id_1.'"]  [/nectar_icon_list_item]
+	  [nectar_icon_list_item title="'.__('List Item','js_composer').'" id="'.$tab_id_2.'"] [/nectar_icon_list_item]
+	  ',
+	  "js_view" => ($vc_is_wp_version_3_6_more ? 'VcTabsView' : 'VcTabsView35')
+	));
+
 
 	class WPBakeryShortCode_Nectar_Icon_List_Item extends WPBakeryShortCode {
 		
@@ -2334,16 +4948,164 @@ function nectar_custom_maps() {
 		
 	}
 
-	vc_lean_map('nectar_icon_list_item', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_icon_list_item.php');
 
-	
+
+	vc_map( array(
+	  "name" => __("List Item", "js_composer"),
+	  "base" => "nectar_icon_list_item",
+	  "allowed_container_element" => 'vc_row',
+	  "is_container" => true,
+	  "content_element" => false,
+	  "params" => array(
+	  	 array(
+	      "type" => "dropdown",
+	      "heading" => __("List Icon Type", "js_composer"),
+	      "param_name" => "icon_type",
+	      "value" => array(
+				"Number" => "numerical",
+				"Icon" => "icon"
+			),
+	      'save_always' => true,
+	      "admin_label" => true,
+	      "description" => __("Please select how many columns you would like..", "js_composer")
+	    ),
+
+	  	 array(
+			'type' => 'dropdown',
+			'heading' => __( 'Icon library', 'js_composer' ),
+			'value' => array(
+				__( 'Font Awesome', 'js_composer' ) => 'fontawesome',
+				__( 'Iconsmind', 'js_composer' ) => 'iconsmind',
+				__( 'Linea', 'js_composer' ) => 'linea',
+				__( 'Steadysets', 'js_composer' ) => 'steadysets',
+			),
+			"dependency" => array('element' => "icon_type", 'value' => 'icon'),
+			'param_name' => 'icon_family',
+			'description' => __( 'Select icon library.', 'js_composer' ),
+		),
+		array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_fontawesome",
+	      "settings" => array( "emptyIcon" => true, "iconsPerPage" => 4000),
+	      "dependency" => Array('element' => "icon_family", 'value' => 'fontawesome'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_iconsmind",
+	      "settings" => array( 'type' => 'iconsmind', 'emptyIcon' => false, "iconsPerPage" => 4000),
+	      "dependency" => array('element' => "icon_family", 'value' => 'iconsmind'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_linea",
+	      "settings" => array( 'type' => 'linea', "emptyIcon" => true, "iconsPerPage" => 4000),
+	      "dependency" => Array('element' => "icon_family", 'value' => 'linea'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_steadysets",
+	      "settings" => array( 'type' => 'steadysets', 'emptyIcon' => false, "iconsPerPage" => 4000),
+	      "dependency" => array('element' => "icon_family", 'value' => 'steadysets'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	  	 array(
+	      "admin_label" => true,
+	      "type" => "textfield",
+	      "heading" => __("Header", "js_composer"),
+	      "param_name" => "header",
+	      "description" => __("Enter the header desired for your icon list element", "js_composer")
+	    ),
+	    array(
+	      "admin_label" => true,
+	      "type" => "textarea",
+	      "heading" => __("Text Content", "js_composer"),
+	      "param_name" => "text",
+	      "description" => __("Enter the text content desired for your icon list element", "js_composer")
+	    ),
+	    array(
+	      "type" => "tab_id",
+	      "heading" => __("Item ID", "js_composer"),
+	      "param_name" => "id"
+	    )
+
+	  ),
+	  'js_view' => ($vc_is_wp_version_3_6_more ? 'VcTabView' : 'VcTabView35')
+	));
+
+
 
 	/* page sub menu */
 	class WPBakeryShortCode_Page_Submenu extends WPBakeryShortCode_Tabbed_Section { }
 
-	vc_lean_map('page_submenu', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/page_submenu.php');
+	$tab_id_1 = time().'-1-'.rand(0, 100);
+	$tab_id_2 = time().'-2-'.rand(0, 100);
+	vc_map( array(
+	  "name"  => __("Page Submenu", "js_composer"),
+	  "base" => "page_submenu",
+	  "show_settings_on_create" => true,
+	  "is_container" => true,
+	  "icon" => "icon-wpb-page-submenu",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Great for animated anchors', 'js_composer'),
+	  "params" => array( 
+	  	array(
+	      "type" => "dropdown",
+	      "heading" => __("Link Alignment", "js_composer"),
+	      "param_name" => "alignment",
+	      "value" => array(
+				"Center" => "center",
+				"Left" => "left",	
+				"Right" => "right"
+			),
+	      'save_always' => true,
+	      "description" => __("Please select your desired link alignment", "js_composer")
+	    ),
+	    array(
+	      "type" => "checkbox",
+		  "class" => "",
+		  "heading" => "Sticky?",
+		  "value" => array("Yes, please" => "true" ),
+		  "param_name" => "sticky",
+		  "description" => "This will cause your submenu to stick to the top when scrolled by"
+	    ),
+		array(
+			"type" => "colorpicker",
+			"class" => "",
+			"heading" => "Menu BG Color",
+			"param_name" => "bg_color",
+			"value" => "#f7f7f7",
+			"description" => ""
+		),
+		array(
+			"type" => "colorpicker",
+			"class" => "",
+			"heading" => "Link Color",
+			"param_name" => "link_color",
+			"value" => "#000000",
+			"description" => ""
+		),
+	  ),
+	  "custom_markup" => '
+	  <div class="wpb_tabs_holder wpb_holder vc_container_for_children">
+	  <ul class="tabs_controls">
+	  </ul>
+	  %content%
+	  </div>'
+	  ,
+	  'default_content' => '
+	  [page_link link_url="#" title="'.__('Link','js_composer').'" id="'.$tab_id_1.'"] [/page_link]
+	  [page_link link_url="#" title="'.__('Link','js_composer').'" id="'.$tab_id_2.'"]  [/page_link]
+	  ',
+	  "js_view" => ($vc_is_wp_version_3_6_more ? 'VcTabsView' : 'VcTabsView35')
+	));
 
-	
 
 	class WPBakeryShortCode_Page_Link extends WPBakeryShortCode {
 		
@@ -2354,17 +5116,98 @@ function nectar_custom_maps() {
 	}
 
 
-	vc_lean_map('page_link', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/page_link.php');
 
-	
+	vc_map( array(
+	  "name" => __("Menu Link", "js_composer"),
+	  "base" => "page_link",
+	  "allowed_container_element" => 'vc_row',
+	  "is_container" => true,
+	  "content_element" => false,
+	  "params" => array(
+	    array(
+	      "admin_label" => false,
+	      "type" => "textfield",
+	      "heading" => __("Link Text", "js_composer"),
+	      "param_name" => "title",
+	      "description" => __("Enter the text that will be displayed for your link", "js_composer")
+	    ),
+	    array(
+	      "admin_label" => true,
+	      "type" => "textfield",
+	      "heading" => __("Link URL", "js_composer"),
+	      "param_name" => "link_url",
+	      "description" => __("Enter the URL that will be used for your link", "js_composer")
+	    ),
+	     array(
+	      "type" => "checkbox",
+		  "class" => "",
+		  "heading" => "Open Link In New Tab",
+		  "value" => array("Yes, please" => "true" ),
+		  "param_name" => "link_new_tab",
+		  "description" => ""
+	    ),
+	    array(
+	      "type" => "tab_id",
+	      "heading" => __("Page Link ID", "js_composer"),
+	      "param_name" => "id"
+	    )
+	  ),
+	  'js_view' => ($vc_is_wp_version_3_6_more ? 'VcTabView' : 'VcTabView35')
+	));
+
+
+
+
 
 
 	/* pricing table */
 	class WPBakeryShortCode_Pricing_Table extends WPBakeryShortCode_Tabbed_Section { }
 
-	vc_lean_map('pricing_table', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/pricing_table.php');
-
-	
+	$tab_id_1 = time().'-1-'.rand(0, 100);
+	$tab_id_2 = time().'-2-'.rand(0, 100);
+	vc_map( array(
+	  "name"  => __("Pricing Table", "js_composer"),
+	  "base" => "pricing_table",
+	  "show_settings_on_create" => false,
+	  "is_container" => true,
+	  "icon" => "icon-wpb-pricing-table",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Stylish pricing tables', 'js_composer'),
+	  "params" => array(
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Extra class name", "js_composer"),
+	      "param_name" => "el_class",
+	      "description" => __("If you wish to style particular content element differently, then use this field to add a class name and then refer to it in your css file.", "js_composer")
+		),
+		array(
+			"type" => "dropdown",
+			"holder" => "div",
+			"admin_label" => false,
+			"class" => "",
+			"heading" => "Style",
+			"param_name" => "style",
+			"value" => array(
+				"Default" => "default",
+				"Flat Alternative" => "flat-alternative"
+			),
+			'save_always' => true,
+			"description" => ""
+		)
+	  ),
+	  "custom_markup" => '
+	  <div class="wpb_tabs_holder wpb_holder vc_container_for_children">
+	  <ul class="tabs_controls">
+	  </ul>
+	  %content%
+	  </div>'
+	  ,
+	  'default_content' => '
+	  [pricing_column title="'.__('Column','js_composer').'" id="'.$tab_id_1.'"]  [/pricing_column]
+	  [pricing_column title="'.__('Column','js_composer').'" id="'.$tab_id_2.'"]  [/pricing_column]
+	  ',
+	  "js_view" => ($vc_is_wp_version_3_6_more ? 'VcTabsView' : 'VcTabsView35')
+	));
 
 
 	class WPBakeryShortCode_Pricing_Column extends WPBakeryShortCode {
@@ -2376,18 +5219,323 @@ function nectar_custom_maps() {
 	}
 
 
-	vc_lean_map('pricing_column', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/pricing_column.php');
+
+	vc_map( array(
+	  "name" => __("Pricing Column", "js_composer"),
+	  "base" => "pricing_column",
+	  "allowed_container_element" => 'vc_row',
+	  "is_container" => true,
+	  "content_element" => false,
+	  "params" => array(
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Title", "js_composer"),
+	      "param_name" => "title",
+	      "admin_label" => true,
+	      "description" => __("Please enter a title for your pricing column", "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Price", "js_composer"),
+	      "param_name" => "price",
+	      "description" => __("Enter the price for your column", "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Currency Symbol", "js_composer"),
+	      "param_name" => "currency_symbol",
+	      "description" => __("Enter the currency symbol that will display for your price", "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Interval", "js_composer"),
+	      "param_name" => "interval",
+	      "description" => __("Enter the interval for your pricing e.g. \"Per Month\" or \"Per Year\" ", "js_composer")
+	    ),
+	    array(
+	      "type" => "checkbox",
+		  "class" => "",
+		  "heading" => "Highlight Column?",
+		  "value" => array("Yes, please" => "true" ),
+		  "param_name" => "highlight",
+		  "description" => ""
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Highlight Reason", "js_composer"),
+	      "param_name" => "highlight_reason",
+	      "description" => __("Enter the reason for the column being highlighted e.g. \"Most Popular\"" , "js_composer"),
+	      "dependency" => Array('element' => "highlight", 'not_empty' => true)
+	    ),
+	    array(
+			"type" => "dropdown",
+			"holder" => "div",
+			"class" => "",
+			"heading" => "Color",
+			"param_name" => "color",
+			"value" => array(
+				"Accent-Color" => "Accent-Color",
+				"Extra-Color-1" => "Extra-Color-1",
+				"Extra-Color-2" => "Extra-Color-2",	
+				"Extra-Color-3" => "Extra-Color-3"
+			),
+			'save_always' => true,
+			"description" => ""
+		),
+		array(
+	      "type" => "textarea_html",
+	      "holder" => "div",
+	      "heading" => __("Text Content", "js_composer"),
+	      "param_name" => "content",
+	      "value" => __("", "js_composer")
+	    )
+	  ),
+	  'js_view' => ($vc_is_wp_version_3_6_more ? 'VcTabView' : 'VcTabView35')
+	));
+
+
 
 
 
 	/* carousel */
 	class WPBakeryShortCode_Carousel extends WPBakeryShortCode_Tabbed_Section { }
 
-	vc_lean_map('carousel', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/carousel.php');
+	$tab_id_1 = time().'-1-'.rand(0, 100);
+	$tab_id_2 = time().'-2-'.rand(0, 100);
+	$tab_id_3 = time().'-3-'.rand(0, 100);
+
+	vc_map( array(
+	  "name"  => __("Carousel", "js_composer"),
+	  "base" => "carousel",
+	  "show_settings_on_create" => true,
+	  "is_container" => true,
+	  "icon" => "icon-wpb-carousel",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('A simple carousel for any content', 'js_composer'),
+	  "params" => array(
+	  array(
+			"type" => "dropdown",
+			"class" => "",
+			"heading" => "Carousel Script",
+			'save_always' => true,
+			"param_name" => "script",
+			"value" => array(
+				"carouFredSel" => "carouFredSel",
+				"Owl Carousel" => "owl_carousel"
+			),
+			"description" => __("Owl Carousel is the reccomended choice as there's greater control over column sizing - however carouFredSel is available for legacy users who prefer it." , "js_composer")
+		),
+	   array(
+			"type" => "dropdown",
+			"class" => "",
+			"heading" => "Columns <span>Desktop</span>",
+			'save_always' => true,
+			"param_name" => "desktop_cols",
+			"value" => array(
+				"Default (4)" => "4",
+				"1" => "1",
+				"2" => "2",
+				"3" => "3",
+				"4" => "4",
+				"5" => "5",
+				"6" => "6",
+				"7" => "7",
+				"8" => "8",
+			),
+			"edit_field_class" => "col-md-2 vc_column",
+			"dependency" => array('element' => "script", 'value' => 'owl_carousel'),
+			"description" => __("" , "js_composer")
+		),
+	   array(
+			"type" => "dropdown",
+			"class" => "",
+			"heading" => "<span>Desktop Small</span>",
+			'save_always' => true,
+			"param_name" => "desktop_small_cols",
+			"value" => array(
+				"Default (3)" => "3",
+				"1" => "1",
+				"2" => "2",
+				"3" => "3",
+				"4" => "4",
+				"5" => "5",
+				"6" => "6",
+				"7" => "7",
+				"8" => "8",
+			),
+			"edit_field_class" => "col-md-2 vc_column",
+			"dependency" => array('element' => "script", 'value' => 'owl_carousel'),
+			"description" => __("" , "js_composer")
+		),
+	    array(
+			"type" => "dropdown",
+			"class" => "",
+			"heading" => "<span>Tablet</span>",
+			'save_always' => true,
+			"param_name" => "tablet_cols",
+			"value" => array(
+				"Default (2)" => "2",
+				"1" => "1",
+				"2" => "2",
+				"3" => "3",
+				"4" => "4",
+				"5" => "5",
+				"6" => "6",
+			),
+			"edit_field_class" => "col-md-2 vc_column",
+			"dependency" => array('element' => "script", 'value' => 'owl_carousel'),
+			"description" => __("" , "js_composer")
+		),
+	    array(
+			"type" => "dropdown",
+			"class" => "",
+			"heading" => "<span>Mobile</span>",
+			'save_always' => true,
+			"param_name" => "mobile_cols",
+			"value" => array(
+				"Default (1)" => "1",
+				"1" => "1",
+				"2" => "2",
+				"3" => "3",
+				"4" => "4",
+			),
+			"dependency" => array('element' => "script", 'value' => 'owl_carousel'),
+			"edit_field_class" => "col-md-2 vc_column",
+			"description" => __("" , "js_composer")
+		),
+	   array(
+	      "type" => "textfield",
+	      "heading" => __("Carousel Title", "js_composer"),
+	      "param_name" => "carousel_title",
+	      "dependency" => array('element' => "script", 'value' => array('carouFredSel')),
+	      "description" => __("Enter the title you would like at the top of your carousel (optional)" , "js_composer")
+	    ),
+	   array(
+	     "type" => "dropdown",
+			"class" => "",
+			"heading" => "Column Padding",
+			'save_always' => true,
+			"param_name" => "column_padding",
+			"value" => array(
+				"None" => "0",
+				"5px" => "5px",
+				"10px" => "10px",
+				"15px" => "15px",
+				"20px" => "20px",
+				"30px" => "30px",
+				"40px" => "40px",
+				"50px" => "50px"
+			),
+			"dependency" => array('element' => "script", 'value' => 'owl_carousel'),
+			"description" => __("Please select your desired column padding " , "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Transition Scroll Speed", "js_composer"),
+	      "param_name" => "scroll_speed",
+	      "dependency" => array('element' => "script", 'value' => array('carouFredSel')),
+	      "description" => __("Enter in milliseconds (default is 700)" , "js_composer")
+	    ),
+	    array(
+			"type" => "checkbox",
+			"class" => "",
+			"heading" => __("Autorotate?", "js_composer"),
+	     	"param_name" => "autorotate",
+			"value" => Array(__("Yes", "js_composer") => 'true'),
+			"description" => ""
+		),
+		array(
+	      "type" => "textfield",
+	      "heading" => __("Autorotation Speed", "js_composer"),
+	      "param_name" => "autorotation_speed",
+	      "dependency" => array('element' => "script", 'value' => array('owl_carousel')),
+	      "description" => __("Enter in milliseconds (default is 5000)" , "js_composer")
+	    ),
+	    array(
+			"type" => "checkbox",
+			"class" => "",
+			"heading" => "Enable Animation",
+			"value" => array("Enable Animation?" => "true" ),
+			"param_name" => "enable_animation",
+			"dependency" => array('element' => "script", 'value' => array('owl_carousel')),
+			"description" => "This will cause your list items to animate in one by one"
+		),
+
+		array(
+			"type" => "textfield",
+			"class" => "",
+			"heading" => "Animation Delay",
+			"param_name" => "delay",
+			"admin_label" => false,
+			"description" => "",
+			"dependency" => Array('element' => "enable_animation", 'not_empty' => true)
+		),
+
+	    array(
+			"type" => "dropdown",
+			"holder" => "div",
+			"class" => "",
+			"admin_label" => false,
+			"heading" => "Easing",
+			"param_name" => "easing",
+			'save_always' => true,
+			"dependency" => array('element' => "script", 'value' => array('carouFredSel')),
+			"value" => array(
+				'linear'=>'linear',
+				'swing'=>'swing',
+				'easeInQuad'=>'easeInQuad',
+				'easeOutQuad' => 'easeOutQuad',
+				'easeInOutQuad'=>'easeInOutQuad',
+				'easeInCubic'=>'easeInCubic',
+				'easeOutCubic'=>'easeOutCubic',
+				'easeInOutCubic'=>'easeInOutCubic',
+				'easeInQuart'=>'easeInQuart',
+				'easeOutQuart'=>'easeOutQuart',
+				'easeInOutQuart'=>'easeInOutQuart',
+				'easeInQuint'=>'easeInQuint',
+				'easeOutQuint'=>'easeOutQuint',
+				'easeInOutQuint'=>'easeInOutQuint',
+				'easeInExpo'=>'easeInExpo',
+				'easeOutExpo'=>'easeOutExpo',
+				'easeInOutExpo'=>'easeInOutExpo',
+				'easeInSine'=>'easeInSine',
+				'easeOutSine'=>'easeOutSine',
+				'easeInOutSine'=>'easeInOutSine',
+				'easeInCirc'=>'easeInCirc',
+				'easeOutCirc'=>'easeOutCirc',
+				'easeInOutCirc'=>'easeInOutCirc',
+				'easeInElastic'=>'easeInElastic',
+				'easeOutElastic'=>'easeOutElastic',
+				'easeInOutElastic'=>'easeInOutElastic',
+				'easeInBack'=>'easeInBack',
+				'easeOutBack'=>'easeOutBack',
+				'easeInOutBack'=>'easeInOutBack',
+				'easeInBounce'=>'easeInBounce',
+				'easeOutBounce'=>'easeOutBounce',
+				'easeInOutBounce'=>'easeInOutBounce',
+			),
+			"description" => "Select the animation easing you would like for slide transitions <a href=\"http://jqueryui.com/resources/demos/effect/easing.html\" target=\"_blank\"> Click here </a> to see examples of these."
+		)
+	  ),
+	  "custom_markup" => '
+	  <div class="wpb_tabs_holder wpb_holder vc_container_for_children">
+	  <ul class="tabs_controls">
+	  </ul>
+	  %content%
+	  </div>'
+	  ,
+	  'default_content' => '
+	  [item id="'.$tab_id_1.'"] Add Content Here [/item]
+	  [item id="'.$tab_id_2.'"] Add Content Here [/item]
+	  [item id="'.$tab_id_3.'"] Add Content Here [/item]
+	  ',
+	  "js_view" => ($vc_is_wp_version_3_6_more ? 'VcTabsView' : 'VcTabsView35')
+	));
+
 
 
 	vc_map( array(
-	  "name" => esc_html__("Carousel Item", "js_composer"),
+	  "name" => __("Carousel Item", "js_composer"),
 	  "base" => "item",
 	  "allowed_container_element" => 'vc_row',
 	  "is_container" => true,
@@ -2395,7 +5543,7 @@ function nectar_custom_maps() {
 	  "params" => array(
 	    array(
 	      "type" => "tab_id",
-	      "heading" => esc_html__("Tab ID", "js_composer"),
+	      "heading" => __("Tab ID", "js_composer"),
 	      "param_name" => "id"
 	    )
 	  ),
@@ -2403,8 +5551,70 @@ function nectar_custom_maps() {
 	));
 
 
+
+
 	// Social Buttons
-	vc_lean_map('social_buttons', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/social_buttons.php');
+	vc_map( array(
+	  "name" => __("Social Buttons", "js_composer"),
+	  "base" => "social_buttons",
+	  "icon" => "icon-wpb-social-buttons",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "description" => __('Add social buttons to any page', 'js_composer'),
+	  "params" => array(
+	     array(
+	      "type" => 'checkbox',
+	      "heading" => __("Display full width?", "js_composer"),
+	      "param_name" => "full_width_icons",
+	      "description" => __("This will make your social icons expand to fit edge to edge in whatever space they're placed." , "js_composer"),
+	      "value" => Array(__("Yes", "js_composer") => 'true')
+	    ),
+	   /* array(
+	      "type" => 'checkbox',
+	      "heading" => __("Hide share counts?", "js_composer"),
+	      "param_name" => "hide_share_count",
+	      "description" => __("This will remove your share counts from displaying to the user" , "js_composer"),
+	      "value" => Array(__("Yes", "js_composer") => 'true')
+	    ), */
+	 	 array(
+	      "type" => 'checkbox',
+	      "heading" => __("Nectar Love", "js_composer"),
+	      "param_name" => "nectar_love",
+	      "value" => Array(__("Yes", "js_composer") => 'true')
+	    ),
+	    array(
+	      "type" => 'checkbox',
+	      "heading" => __("Facebook", "js_composer"),
+	      "param_name" => "facebook",
+	      "value" => Array(__("Yes", "js_composer") => 'true')
+	    ),
+	    array(
+	      "type" => 'checkbox',
+	      "heading" => __("Twitter", "js_composer"),
+	      "param_name" => "twitter",
+	      "value" => Array(__("Yes", "js_composer") => 'true')
+	    ),
+	    array(
+	      "type" => 'checkbox',
+	      "heading" => __("Google+", "js_composer"),
+	      "param_name" => "google_plus",
+	      "value" => Array(__("Yes", "js_composer") => 'true')
+	    ),
+	    array(
+	      "type" => 'checkbox',
+	      "heading" => __("LinkedIn", "js_composer"),
+	      "param_name" => "linkedin",
+	      "value" => Array(__("Yes", "js_composer") => 'true')
+	    ),
+	    array(
+	      "type" => 'checkbox',
+	      "heading" => __("Pinterest", "js_composer"),
+	      "param_name" => "pinterest",
+	      "description" => '',
+	      "value" => Array(__("Yes", "js_composer") => 'true')
+	    )
+	  )
+	));
+
 
 
 
@@ -2420,369 +5630,1682 @@ function nectar_custom_maps() {
 	vc_remove_param("vc_gallery", "el_class");
 
 
-
-	vc_add_param("vc_gallery",array(
-	      "type" => "dropdown",
-	      "heading" => esc_html__("Gallery type", "js_composer"),
-	      "param_name" => "type",
-	      "value" => array(
-	         esc_html__("Basic Slider Style", "js_composer") => "flexslider_style", 
-	         esc_html__("Nectar Slider Style", "js_composer") => "nectarslider_style",
-	         esc_html__("Touch Enabled and Spaced (Flickity)", "js_composer") => "flickity_style",
-	         esc_html__("Image Grid Style", "js_composer") => "image_grid",
-	         esc_html__("Parallax Image Grid", "js_composer") => "parallax_image_grid"
-	       ),
-	      'save_always' => true,
-	      "description" => esc_html__("Select gallery type.", "js_composer")
-	));
-	vc_add_param("vc_gallery",array(
-	      "type" => "dropdown",
-	      "heading" => esc_html__("Auto rotate slides", "js_composer"),
-	      "param_name" => "interval",
-	      "value" => array(3, 5, 10, 15, esc_html__("Disable", "js_composer") => 0),
-	      "description" => esc_html__("Auto rotate slides each X seconds.", "js_composer"),
-	      'save_always' => true,
-	      "dependency" => Array('element' => "type", 'value' => array('flexslider_fade', 'flexslider_slide', 'nivo'))
-	));
-	vc_add_param("vc_gallery",array(
-	      "type" => "attach_images",
-	      "heading" => esc_html__("Images", "js_composer"),
-	      "param_name" => "images",
-	      "value" => "",
-	      "description" => esc_html__("Select images from media library.", "js_composer"),
-	      "dependency" => Array('element' => "source", 'value' => array('media_library'))
-	));
-	vc_add_param("vc_gallery",array(
-	      "type" => "textfield",
-	      "heading" => esc_html__("Image size", "js_composer"),
-	      "param_name" => "img_size",
-	      "description" => esc_html__("Enter image size in pixels - e.g 600x400 (Width x Height) Or use WordPress image size names such as \"full\"", "js_composer"),
-	      "dependency" => Array('element' => "source", 'value' => array('media_library'))
-	));
-
-	vc_add_param("vc_gallery",array(
-		  "type" => "dropdown",
-		  "heading" => esc_html__("Controls", "js_composer"),
-		  "param_name" => "flickity_controls",
-		  "value" => array(
-			    "Pagination" => "pagination",
-			    "Material Pagination" => "material_pagination",
-			    "Next/Prev Arrows" => "next_prev_arrows",
-			    "None" => 'none'
-			),
-		  'save_always' => true,
-		  "description" => esc_html__("Please select the controls you would like for your gallery ", "js_composer"),
-		  "dependency" => Array('element' => "type", 'value' => array('flickity_style'))
-	));
-
-	vc_add_param("vc_gallery",array(
-		  "type" => "dropdown",
-		  "heading" => esc_html__("Desktop Columns", "js_composer"),
-		  "param_name" => "flickity_desktop_columns",
-		  "value" => array(
-			    "1" => "1",
-			    "2" => "2",
-			    "3" => "3",
-			    "4" => "4",
-			    "5" => "5"
-			),
-		  'save_always' => true,
-		  "description" => '',
-		  "dependency" => Array('element' => "type", 'value' => array('flickity_style'))
-	));
-	vc_add_param("vc_gallery",array(
-		  "type" => "dropdown",
-		  "heading" => esc_html__("Small Desktop Columns", "js_composer"),
-		  "param_name" => "flickity_small_desktop_columns",
-		  "value" => array(
-			    "1" => "1",
-			    "2" => "2",
-			    "3" => "3",
-			    "4" => "4",
-			    "5" => "5"
-			),
-		  'save_always' => true,
-		  "description" => '',
-		  "dependency" => Array('element' => "type", 'value' => array('flickity_style'))
-	));
-	vc_add_param("vc_gallery",array(
-		  "type" => "dropdown",
-		  "heading" => esc_html__("Tablet Columns", "js_composer"),
-		  "param_name" => "flickity_tablet_columns",
-		  "value" => array(
-			    "1" => "1",
-			    "2" => "2",
-			    "3" => "3",
-			    "4" => "4",
-			    "5" => "5"
-			),
-		  'save_always' => true,
-		  "description" => '',
-		  "dependency" => Array('element' => "type", 'value' => array('flickity_style'))
-	));
-
-	 vc_add_param("vc_gallery",array(
-	      "type" => 'checkbox',
-	      "heading" => esc_html__("Free Scroll", "js_composer"),
-	      "param_name" => "flickity_free_scroll",
-	      "description" => esc_html__("Enables content to be freely flicked without aligning cells to an end position.", "js_composer"),
-	      "value" => Array(esc_html__("Yes, please", "js_composer") => 'true'),
-	      "dependency" => Array('element' => "type", 'value' => array('flickity_style'))
-	  ));
-
-	  vc_add_param("vc_gallery",array(
-	      "type" => 'checkbox',
-	      "heading" => esc_html__("Enable Auto Play", "js_composer"),
-	      "param_name" => "flickity_autoplay",
-	      "description" => esc_html__("Will cause your images to auto play until user interaction", "js_composer"),
-	      "value" => Array(esc_html__("Yes, please", "js_composer") => 'true'),
-	      "dependency" => Array('element' => "type", 'value' => array('flickity_style'))
-	  ));
-
-	  vc_add_param("vc_gallery",array(
-	      "type" => 'textfield',
-	      "heading" => esc_html__("Auto Play Duration", "js_composer"),
-	      "param_name" => "flickity_autoplay_dur",
-	      "description" => esc_html__("Enter a custom duration in milliseconds between auto play advances e.g. 5000", "js_composer"),
-	      "dependency" => Array('element' => "type", 'value' => array('flickity_style'))
-	  ));
-
-	vc_add_param("vc_gallery",array(
-      "type" => "dropdown",
-      "heading" => esc_html__("Box Shadow", "js_composer"),
-      'save_always' => true,
-      "param_name" => "flickity_box_shadow",
-      "value" => array(esc_html__("None", "js_composer") => "none", esc_html__("Small Depth", "js_composer") => "small_depth", esc_html__("Medium Depth", "js_composer") => "medium_depth", esc_html__("Large Depth", "js_composer") => "large_depth", esc_html__("Very Large Depth", "js_composer") => "x_large_depth"),
-      "description" => esc_html__("Select your desired image box shadow", "js_composer"),
-      "dependency" => Array('element' => "type", 'value' => array('flickity_style'))
-    ));
-
-	 vc_add_param("vc_gallery",array(
-	      "type" => 'checkbox',
-	      "heading" => esc_html__("Flexible Slider Height", "js_composer"),
-	      "param_name" => "flexible_slider_height",
-	      "description" => esc_html__("Would you like the height of your slider to constantly scale in porportion to the screen size?", "js_composer"),
-	      "value" => Array(esc_html__("Yes, please", "js_composer") => 'true'),
-	      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style'))
-	  ));
+	if(nectar_has_shortcode('vc_gallery')) { 
 		vc_add_param("vc_gallery",array(
-	      "type" => 'checkbox',
-	      "heading" => esc_html__("Disable Autorotate?", "js_composer"),
-	      "param_name" => "disable_auto_rotate",
-	      "description" => esc_html__("This will stop the slider from automatically rotating.", "js_composer"),
-	      "value" => Array(esc_html__("Yes, please", "js_composer") => 'true'),
-	      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style'))
-	  ));
-	  vc_add_param("vc_gallery",array(
-	      "type" => 'checkbox',
-	      "heading" => esc_html__("Hide Arrow Navigation?", "js_composer"),
-	      "param_name" => "hide_arrow_navigation",
-	      "description" => esc_html__("Would you like this slider to hide the arrows on the right and left sides?", "js_composer"),
-	      "value" => Array(esc_html__("Yes, please", "js_composer") => 'true'),
-	      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style'))
-	  ));
-	  vc_add_param("vc_gallery",array(
-	      "type" => 'checkbox',
-	      "heading" => esc_html__("Display Bullet Navigation?", "js_composer"),
-	      "param_name" => "bullet_navigation",
-	      "description" => esc_html__("Would you like this slider to display bullets on the bottom?", "js_composer"),
-	      "value" => Array(esc_html__("Yes, please", "js_composer") => 'true'),
-	      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style'))
-	  ));
-	  vc_add_param("vc_gallery",array(
+		      "type" => "dropdown",
+		      "heading" => __("Gallery type", "js_composer"),
+		      "param_name" => "type",
+		      "value" => array(
+		         __("Basic Slider Style", "js_composer") => "flexslider_style", 
+		         __("Nectar Slider Style", "js_composer") => "nectarslider_style",
+		         __("Touch Enabled & Spaced", "js_composer") => "flickity_style",
+		         __("Image Grid Style", "js_composer") => "image_grid"
+		       ),
+		      'save_always' => true,
+		      "description" => __("Select gallery type.", "js_composer")
+		));
+		vc_add_param("vc_gallery",array(
+		      "type" => "dropdown",
+		      "heading" => __("Auto rotate slides", "js_composer"),
+		      "param_name" => "interval",
+		      "value" => array(3, 5, 10, 15, __("Disable", "js_composer") => 0),
+		      "description" => __("Auto rotate slides each X seconds.", "js_composer"),
+		      'save_always' => true,
+		      "dependency" => Array('element' => "type", 'value' => array('flexslider_fade', 'flexslider_slide', 'nivo'))
+		));
+		vc_add_param("vc_gallery",array(
+		      "type" => "attach_images",
+		      "heading" => __("Images", "js_composer"),
+		      "param_name" => "images",
+		      "value" => "",
+		      "description" => __("Select images from media library.", "js_composer"),
+		      "dependency" => Array('element' => "source", 'value' => array('media_library'))
+		));
+		vc_add_param("vc_gallery",array(
+		      "type" => "textfield",
+		      "heading" => __("Image size", "js_composer"),
+		      "param_name" => "img_size",
+		      "description" => __("Enter image size in pixels - e.g 600x400 (Width x Height) <br/> Or use WordPress image size names such as \"full\"", "js_composer"),
+		      "dependency" => Array('element' => "source", 'value' => array('media_library'))
+		));
+
+		vc_add_param("vc_gallery",array(
+			  "type" => "dropdown",
+			  "heading" => __("Controls", "js_composer"),
+			  "param_name" => "flickity_controls",
+			  "value" => array(
+				    "Pagination" => "pagination",
+				    "Next/Prev Arrows" => "next_prev_arrows"
+				),
+			  'save_always' => true,
+			  "description" => __("Please select the controls you would like for your gallery ", "js_composer"),
+			  "dependency" => Array('element' => "type", 'value' => array('flickity_style'))
+		));
+		vc_add_param("vc_gallery",array(
 	      "type" => "dropdown",
-	      "heading" => esc_html__("Bullet Navigation Style", "js_composer"),
-	      "param_name" => "bullet_navigation_style",
-	      "value" => array(
-				'See Through & Solid On Active' => 'see_through',
-				'Solid & Scale On Active' => 'scale',
-				'See Through - Autorotate Visualized' => 'see_through_ar_visualized'
-	      ),
+	      "heading" => __("Box Shadow", "js_composer"),
 	      'save_always' => true,
-	      "description" => 'Please select your overall bullet navigation style here.',
-	      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style'))
-	  ));
+	      "param_name" => "flickity_box_shadow",
+	      "value" => array(__("None", "js_composer") => "none", __("Small Depth", "js_composer") => "small_depth", __("Medium Depth", "js_composer") => "medium_depth", __("Large Depth", "js_composer") => "large_depth", __("Very Large Depth", "js_composer") => "x_large_depth"),
+	      "description" => __("Select your desired image box shadow", "js_composer"),
+	      "dependency" => Array('element' => "type", 'value' => array('flickity_style'))
+	    ));
+
+		 vc_add_param("vc_gallery",array(
+		      "type" => 'checkbox',
+		      "heading" => __("Flexible Slider Height", "js_composer"),
+		      "param_name" => "flexible_slider_height",
+		      "description" => __("Would you like the height of your slider to constantly scale in porportion to the screen size?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style'))
+		  ));
+		  vc_add_param("vc_gallery",array(
+		      "type" => 'checkbox',
+		      "heading" => __("Hide Arrow Navigation?", "js_composer"),
+		      "param_name" => "hide_arrow_navigation",
+		      "description" => __("Would you like this slider to hide the arrows on the right and left sides?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style'))
+		  ));
+		  vc_add_param("vc_gallery",array(
+		      "type" => 'checkbox',
+		      "heading" => __("Display Bullet Navigation?", "js_composer"),
+		      "param_name" => "bullet_navigation",
+		      "description" => __("Would you like this slider to display bullets on the bottom?", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style'))
+		  ));
+		  vc_add_param("vc_gallery",array(
+		      "type" => "dropdown",
+		      "heading" => __("Bullet Navigation Style", "js_composer"),
+		      "param_name" => "bullet_navigation_style",
+		      "value" => array(
+					'See Through & Solid On Active' => 'see_through',
+					'Solid & Scale On Active' => 'scale'
+		      ),
+		      'save_always' => true,
+		      "description" => 'Please select your overall bullet navigation style here.',
+		      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style'))
+		  ));
 
 
-	vc_add_param("vc_gallery",array(
-	      "type" => 'checkbox',
-	      "heading" => esc_html__("Display Title/Caption?", "js_composer"),
-	      "param_name" => "display_title_caption",
-	      "value" => Array(esc_html__("Yes", "js_composer") => 'true'),
-	      "dependency" => Array('element' => "type", 'value' => array('image_grid','parallax_image_grid'))
-	));
+		vc_add_param("vc_gallery",array(
+		      "type" => 'checkbox',
+		      "heading" => __("Display Title/Caption?", "js_composer"),
+		      "param_name" => "display_title_caption",
+		      "value" => Array(__("Yes", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "type", 'value' => array('image_grid'))
+		));
 
-	vc_add_param("vc_gallery",array(
+		vc_add_param("vc_gallery",array(
+			  "type" => "dropdown",
+			  "heading" => __("Layout", "js_composer"),
+			  "param_name" => "layout",
+			  "admin_label" => true,
+			  "value" => array(
+				    "3 Columns" => "3",
+				    "4 Columns" => "4",
+				    "Fullwidth" => "fullwidth"
+				),
+			  'save_always' => true,
+			  "description" => __("Please select the layout you would like for your gallery ", "js_composer"),
+			  "dependency" => Array('element' => "type", 'value' => array('image_grid'))
+		));
+		vc_add_param("vc_gallery",array(
+		      "type" => 'checkbox',
+		      "heading" => __("Masonry Style", "js_composer"),
+		      "param_name" => "masonry_style",
+		      "description" => __("This will allow your gallery items to display in a masonry layout as opposed to a fixed grid. You can define your desired masonry size for each image when editing/adding them in the right hand side \"Attachment Details\" sidebar. Enabling this will override the \"Image Size\" field above.<br/> ", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "type", 'value' => array('image_grid'))
+		));
+		vc_add_param("vc_gallery",array(
+			  "type" => "dropdown",
+			  "heading" => __("Item Spacing", "js_composer"),
+			  "param_name" => "item_spacing",
+			  'save_always' => true,
+			  "value" => array(
+			  		"Default" => "default",
+				    "1px" => "1px",
+				    "2px" => "2px",
+				    "3px" => "3px",
+				    "4px" => "4px",
+				    "5px" => "5px",
+				    "6px" => "6px",
+				    "7px" => "7px",
+				    "8px" => "8px",
+				    "9px" => "9px",
+				    "10px" => "10px",
+				    "15px" => "15px",
+				    "20px" => "20px"
+				),
+			  "dependency" => Array('element' => "layout", 'value' => array('fullwidth')),
+			  "description" => __("Please select the spacing you would like between your items. ", "js_composer")
+		));
+		vc_add_param("vc_gallery",array(
+		      "type" => 'checkbox',
+		      "heading" => __("Constrain Max Columns to 4?", "js_composer"),
+		      "param_name" => "constrain_max_cols",
+		      "description" => __("This will change the max columns to 4 (default is 5 for fullwidth). Activating this will make it easier to create a grid with no empty spaces at the end of the list on all screen sizes. (Won't be used if masonry layout is active)", "js_composer"),
+		      "value" => Array(__("Yes, please", "js_composer") => 'true'),
+		      "dependency" => Array('element' => "layout", 'value' => 'fullwidth')
+		));
+		vc_add_param("vc_gallery",array(
+			  "type" => "dropdown",
+			  "heading" => __("Gallery Style", "js_composer"),
+			  "param_name" => "gallery_style",
+			  "admin_label" => true,
+			  "value" => array(
+				    "Meta below thumb w/ links on hover" => "1",
+				    "Meta on hover + entire thumb link" => "2",
+				    "Meta on hover w/ zoom + entire thumb link" => "7",
+				    "Title overlaid w/ zoom effect on hover" => "3",
+				    'Title overlaid w/ zoom effect on hover alt' => '5',
+				    "Meta from bottom on hover + entire thumb link" => "4"
+				),
+			  'save_always' => true,
+			  "description" => __("Please select the style you would like your gallery to display in ", "js_composer"),
+			  "dependency" => Array('element' => "type", 'value' => array('image_grid'))
+		));
+
+		vc_add_param("vc_gallery",array(
+			  "type" => "dropdown",
+			  "heading" => __("Load In Animation", "js_composer"),
+			  "param_name" => "load_in_animation",
+			  'save_always' => true,
+			  "value" => array(
+				    "None" => "none",
+				    "Fade In" => "fade_in",
+				    "Fade In From Bottom" => "fade_in_from_bottom"
+				),
+			  "description" => __("Please select the style you would like your projects to display in ", "js_composer"),
+			  "dependency" => Array('element' => "type", 'value' => array('image_grid'))
+		));
+
+		vc_add_param("vc_gallery",array(
+		      "type" => "dropdown",
+		      "heading" => __("On click", "js_composer"),
+		      "param_name" => "onclick",
+		      "value" => array( __("Do nothing", "js_composer") => "link_no", __("Open prettyPhoto", "js_composer") => "link_image",  __("Open custom link", "js_composer") => "custom_link"),
+		      "description" => __("What to do when slide is clicked?", "js_composer"),
+		      'save_always' => true,
+		      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style', 'flexslider_style', 'flickity_style'))
+		));
+		vc_add_param("vc_gallery",array(
+		      "type" => "exploded_textarea",
+		      "heading" => __("Custom links", "js_composer"),
+		      "param_name" => "custom_links",
+		      "description" => __('Enter links for each slide here. Divide links with linebreaks (Enter).', 'js_composer'),
+		      "dependency" => Array('element' => "onclick", 'value' => array('custom_link'))
+		));
+
+		vc_add_param("vc_gallery",array(
+		      "type" => "dropdown",
+		      "heading" => __("Custom link target", "js_composer"),
+		      "param_name" => "custom_links_target",
+		      "description" => __('Select where to open  custom links.', 'js_composer'),
+		      "dependency" => Array('element' => "onclick", 'value' => array('custom_link')),
+		      'save_always' => true,
+		      'value' => array(__("Same window", "js_composer") => "_self", __("New window", "js_composer") => "_blank")
+		));
+		vc_add_param("vc_gallery",array(
+		      "type" => "textfield",
+		      "heading" => __("Extra class name", "js_composer"),
+		      "param_name" => "el_class",
+		      "description" => __("If you wish to style particular content element differently, then use this field to add a class name and then refer to it in your css file.", "js_composer")
+		));
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+	   $fa_icons = array(
+		      'icon-glass' => 'icon-glass',
+			  'icon-music' => 'icon-music',
+			  'icon-search' => 'icon-search',
+			  'icon-envelope-alt' => 'icon-envelope-alt',
+			  'icon-heart' => 'icon-heart',
+			  'icon-star' => 'icon-star',
+			  'icon-star-empty' => 'icon-star-empty',
+			  'icon-user' => 'icon-user',
+			  'icon-film' => 'icon-film',
+			  'icon-th-large' => 'icon-th-large',
+			  'icon-th' => 'icon-th',
+			  'icon-th-list' => 'icon-th-list',
+			  'icon-ok' => 'icon-ok',
+			  'icon-remove' => 'icon-remove',
+			  'icon-zoom-in' => 'icon-zoom-in',
+			  'icon-zoom-out' => 'icon-zoom-out',
+			  'icon-off' => 'icon-off',
+			  'icon-signal' => 'icon-signal',
+			  'icon-cog' => 'icon-cog',
+			  'icon-trash' => 'icon-trash',
+			  'icon-home' => 'icon-home',
+			  'icon-file-alt' => 'icon-file-alt',
+			  'icon-time' => 'icon-time',
+			  'icon-road' => 'icon-road',
+			  'icon-download-alt' => 'icon-download-alt',
+			  'icon-download' => 'icon-download',
+			  'icon-upload' => 'icon-upload',
+			  'icon-inbox' => 'icon-inbox',
+			  'icon-play-circle' => 'icon-play-circle',
+			  'icon-repeat' => 'icon-repeat',
+			  'icon-refresh' => 'icon-refresh',
+			  'icon-list-alt' => 'icon-list-alt',
+			  'icon-lock' => 'icon-lock',
+			  'icon-flag' => 'icon-flag',
+			  'icon-headphones' => 'icon-headphones',
+			  'icon-volume-off' => 'icon-volume-off',
+			  'icon-volume-down' => 'icon-volume-down',
+			  'icon-volume-up' => 'icon-volume-up',
+			  'icon-qrcode' => 'icon-qrcode',
+			  'icon-barcode' => 'icon-barcode',
+			  'icon-tag' => 'icon-tag',
+			  'icon-tags' => 'icon-tags',
+			  'icon-book' => 'icon-book',
+			  'icon-bookmark' => 'icon-bookmark',
+			  'icon-print' => 'icon-print',
+			  'icon-camera' => 'icon-camera',
+			  'icon-font' => 'icon-font',
+			  'icon-bold' => 'icon-bold',
+			  'icon-italic' => 'icon-italic',
+			  'icon-text-height' => 'icon-text-height',
+			  'icon-text-width' => 'icon-text-width',
+			  'icon-align-left' => 'icon-align-left',
+			  'icon-align-center' => 'icon-align-center',
+			  'icon-align-right' => 'icon-align-right',
+			  'icon-align-justify' => 'icon-align-justify',
+			  'icon-list' => 'icon-list',
+			  'icon-indent-left' => 'icon-indent-left',
+			  'icon-indent-right' => 'icon-indent-right',
+			  'icon-facetime-video' => 'icon-facetime-video',
+			  'icon-picture' => 'icon-picture',
+			  'icon-pencil' => 'icon-pencil',
+			  'icon-map-marker' => 'icon-map-marker',
+			  'icon-adjust' => 'icon-adjust',
+			  'icon-tint' => 'icon-tint',
+			  'icon-edit' => 'icon-edit',
+			  'icon-share' => 'icon-share',
+			  'icon-check' => 'icon-check',
+			  'icon-move' => 'icon-move',
+			  'icon-step-backward' => 'icon-step-backward',
+			  'icon-fast-backward' => 'icon-fast-backward',
+			  'icon-backward' => 'icon-backward',
+			  'icon-play' => 'icon-play',
+			  'icon-pause' => 'icon-pause',
+			  'icon-stop' => 'icon-stop',
+			  'icon-forward' => 'icon-forward',
+			  'icon-fast-forward' => 'icon-fast-forward',
+			  'icon-step-forward' => 'icon-step-forward',
+			  'icon-eject' => 'icon-eject',
+			  'icon-chevron-left' => 'icon-chevron-left',
+			  'icon-chevron-right' => 'icon-chevron-right',
+			  'icon-plus-sign' => 'icon-plus-sign',
+			  'icon-minus-sign' => 'icon-minus-sign',
+			  'icon-remove-sign' => 'icon-remove-sign',
+			  'icon-ok-sign' => 'icon-ok-sign',
+			  'icon-question-sign' => 'icon-question-sign',
+			  'icon-info-sign' => 'icon-info-sign',
+			  'icon-screenshot' => 'icon-screenshot',
+			  'icon-remove-circle' => 'icon-remove-circle',
+			  'icon-ok-circle' => 'icon-ok-circle',
+			  'icon-ban-circle' => 'icon-ban-circle',
+			  'icon-arrow-left' => 'icon-arrow-left',
+			  'icon-arrow-right' => 'icon-arrow-right',
+			  'icon-arrow-up' => 'icon-arrow-up',
+			  'icon-arrow-down' => 'icon-arrow-down',
+			  'icon-share-alt' => 'icon-share-alt',
+			  'icon-resize-full' => 'icon-resize-full',
+			  'icon-resize-small' => 'icon-resize-small',
+			  'icon-plus' => 'icon-plus',
+			  'icon-minus' => 'icon-minus',
+			  'icon-asterisk' => 'icon-asterisk',
+			  'icon-exclamation-sign' => 'icon-exclamation-sign',
+			  'icon-gift' => 'icon-gift',
+			  'icon-leaf' => 'icon-leaf',
+			  'icon-fire' => 'icon-fire',
+			  'icon-eye-open' => 'icon-eye-open',
+			  'icon-eye-close' => 'icon-eye-close',
+			  'icon-warning-sign' => 'icon-warning-sign',
+			  'icon-plane' => 'icon-plane',
+			  'icon-calendar' => 'icon-calendar',
+			  'icon-random' => 'icon-random',
+			  'icon-comment' => 'icon-comment',
+			  'icon-magnet' => 'icon-magnet',
+			  'icon-chevron-up' => 'icon-chevron-up',
+			  'icon-chevron-down' => 'icon-chevron-down',
+			  'icon-retweet' => 'icon-retweet',
+			  'icon-shopping-cart' => 'icon-shopping-cart',
+			  'icon-folder-close' => 'icon-folder-close',
+			  'icon-folder-open' => 'icon-folder-open',
+			  'icon-resize-vertical' => 'icon-resize-vertical',
+			  'icon-resize-horizontal' => 'icon-resize-horizontal',
+			  'icon-bar-chart' => 'icon-bar-chart',
+			  'icon-twitter-sign' => 'icon-twitter-sign',
+			  'icon-facebook-sign' => 'icon-facebook-sign',
+			  'icon-camera-retro' => 'icon-camera-retro',
+			  'icon-key' => 'icon-key',
+			  'icon-cogs' => 'icon-cogs',
+			  'icon-comments' => 'icon-comments',
+			  'icon-thumbs-up-alt' => 'icon-thumbs-up-alt',
+			  'icon-thumbs-down-alt' => 'icon-thumbs-down-alt',
+			  'icon-star-half' => 'icon-star-half',
+			  'icon-heart-empty' => 'icon-heart-empty',
+			  'icon-signout' => 'icon-signout',
+			  'icon-linkedin-sign' => 'icon-linkedin-sign',
+			  'icon-pushpin' => 'icon-pushpin',
+			  'icon-external-link' => 'icon-external-link',
+			  'icon-signin' => 'icon-signin',
+			  'icon-trophy' => 'icon-trophy',
+			  'icon-github-sign' => 'icon-github-sign',
+			  'icon-upload-alt' => 'icon-upload-alt',
+			  'icon-lemon' => 'icon-lemon',
+			  'icon-phone' => 'icon-phone',
+			  'icon-check-empty' => 'icon-check-empty',
+			  'icon-bookmark-empty' => 'icon-bookmark-empty',
+			  'icon-phone-sign' => 'icon-phone-sign',
+			  'icon-twitter' => 'icon-twitter',
+			  'icon-facebook' => 'icon-facebook',
+			  'icon-github' => 'icon-github',
+			  'icon-unlock' => 'icon-unlock',
+			  'icon-credit-card' => 'icon-credit-card',
+			  'icon-rss' => 'icon-rss',
+			  'icon-hdd' => 'icon-hdd',
+			  'icon-bullhorn' => 'icon-bullhorn',
+			  'icon-bell' => 'icon-bell',
+			  'icon-certificate' => 'icon-certificate',
+			  'icon-hand-right' => 'icon-hand-right',
+			  'icon-hand-left' => 'icon-hand-left',
+			  'icon-hand-up' => 'icon-hand-up',
+			  'icon-hand-down' => 'icon-hand-down',
+			  'icon-circle-arrow-left' => 'icon-circle-arrow-left',
+			  'icon-circle-arrow-right' => 'icon-circle-arrow-right',
+			  'icon-circle-arrow-up' => 'icon-circle-arrow-up',
+			  'icon-circle-arrow-down' => 'icon-circle-arrow-down',
+			  'icon-globe' => 'icon-globe',
+			  'icon-wrench' => 'icon-wrench',
+			  'icon-tasks' => 'icon-tasks',
+			  'icon-filter' => 'icon-filter',
+			  'icon-briefcase' => 'icon-briefcase',
+			  'icon-fullscreen' => 'icon-fullscreen',
+			  'icon-group' => 'icon-group',
+			  'icon-link' => 'icon-link',
+			  'icon-cloud' => 'icon-cloud',
+			  'icon-beaker' => 'icon-beaker',
+			  'icon-cut' => 'icon-cut',
+			  'icon-copy' => 'icon-copy',
+			  'icon-paper-clip' => 'icon-paper-clip',
+			  'icon-save' => 'icon-save',
+			  'icon-sign-blank' => 'icon-sign-blank',
+			  'icon-reorder' => 'icon-reorder',
+			  'icon-list-ul' => 'icon-list-ul',
+			  'icon-list-ol' => 'icon-list-ol',
+			  'icon-strikethrough' => 'icon-strikethrough',
+			  'icon-underline' => 'icon-underline',
+			  'icon-table' => 'icon-table',
+			  'icon-magic' => 'icon-magic',
+			  'icon-truck' => 'icon-truck',
+			  'icon-pinterest' => 'icon-pinterest',
+			  'icon-pinterest-sign' => 'icon-pinterest-sign',
+			  'icon-google-plus-sign' => 'icon-google-plus-sign',
+			  'icon-google-plus' => 'icon-google-plus',
+			  'icon-money' => 'icon-money',
+			  'icon-caret-down' => 'icon-caret-down',
+			  'icon-caret-up' => 'icon-caret-up',
+			  'icon-caret-left' => 'icon-caret-left',
+			  'icon-caret-right' => 'icon-caret-right',
+			  'icon-columns' => 'icon-columns',
+			  'icon-sort' => 'icon-sort',
+			  'icon-sort-down' => 'icon-sort-down',
+			  'icon-sort-up' => 'icon-sort-up',
+			  'icon-envelope' => 'icon-envelope',
+			  'icon-linkedin' => 'icon-linkedin',
+			  'icon-undo' => 'icon-undo',
+			  'icon-legal' => 'icon-legal',
+			  'icon-dashboard' => 'icon-dashboard',
+			  'icon-comment-alt' => 'icon-comment-alt',
+			  'icon-comments-alt' => 'icon-comments-alt',
+			  'icon-bolt' => 'icon-bolt',
+			  'icon-sitemap' => 'icon-sitemap',
+			  'icon-umbrella' => 'icon-umbrella',
+			  'icon-paste' => 'icon-paste',
+			  'icon-lightbulb' => 'icon-lightbulb',
+			  'icon-exchange' => 'icon-exchange',
+			  'icon-cloud-download' => 'icon-cloud-download',
+			  'icon-cloud-upload' => 'icon-cloud-upload',
+			  'icon-user-md' => 'icon-user-md',
+			  'icon-stethoscope' => 'icon-stethoscope',
+			  'icon-suitcase' => 'icon-suitcase',
+			  'icon-bell-alt' => 'icon-bell-alt',
+			  'icon-coffee' => 'icon-coffee',
+			  'icon-food' => 'icon-food',
+			  'icon-file-text-alt' => 'icon-file-text-alt',
+			  'icon-building' => 'icon-building',
+			  'icon-hospital' => 'icon-hospital',
+			  'icon-ambulance' => 'icon-ambulance',
+			  'icon-medkit' => 'icon-medkit',
+			  'icon-fighter-jet' => 'icon-fighter-jet',
+			  'icon-beer' => 'icon-beer',
+			  'icon-h-sign' => 'icon-h-sign',
+			  'icon-plus-sign-alt' => 'icon-plus-sign-alt',
+			  'icon-double-angle-left' => 'icon-double-angle-left',
+			  'icon-double-angle-right' => 'icon-double-angle-right',
+			  'icon-double-angle-up' => 'icon-double-angle-up',
+			  'icon-double-angle-down' => 'icon-double-angle-down',
+			  'icon-angle-left' => 'icon-angle-left',
+			  'icon-angle-right' => 'icon-angle-right',
+			  'icon-angle-up' => 'icon-angle-up',
+			  'icon-angle-down' => 'icon-angle-down',
+			  'icon-desktop' => 'icon-desktop',
+			  'icon-laptop' => 'icon-laptop',
+			  'icon-tablet' => 'icon-tablet',
+			  'icon-mobile-phone' => 'icon-mobile-phone',
+			  'icon-circle-blank' => 'icon-circle-blank',
+			  'icon-quote-left' => 'icon-quote-left',
+			  'icon-quote-right' => 'icon-quote-right',
+			  'icon-spinner' => 'icon-spinner',
+			  'icon-circle' => 'icon-circle',
+			  'icon-reply' => 'icon-reply',
+			  'icon-github-alt' => 'icon-github-alt',
+			  'icon-folder-close-alt' => 'icon-folder-close-alt',
+			  'icon-folder-open-alt' => 'icon-folder-open-alt',
+			  'icon-expand-alt' => 'icon-expand-alt',
+			  'icon-collapse-alt' => 'icon-collapse-alt',
+			  'icon-smile' => 'icon-smile',
+			  'icon-frown' => 'icon-frown',
+			  'icon-meh' => 'icon-meh',
+			  'icon-gamepad' => 'icon-gamepad',
+			  'icon-keyboard' => 'icon-keyboard',
+			  'icon-flag-alt' => 'icon-flag-alt',
+			  'icon-flag-checkered' => 'icon-flag-checkered',
+			  'icon-terminal' => 'icon-terminal',
+			  'icon-code' => 'icon-code',
+			  'icon-reply-all' => 'icon-reply-all',
+			  'icon-mail-reply-all' => 'icon-mail-reply-all',
+			  'icon-star-half-empty' => 'icon-star-half-empty',
+			  'icon-location-arrow' => 'icon-location-arrow',
+			  'icon-crop' => 'icon-crop',
+			  'icon-code-fork' => 'icon-code-fork',
+			  'icon-unlink' => 'icon-unlink',
+			  'icon-question' => 'icon-question',
+			  'icon-info' => 'icon-info',
+			  'icon-exclamation' => 'icon-exclamation',
+			  'icon-superscript' => 'icon-superscript',
+			  'icon-subscript' => 'icon-subscript',
+			  'icon-eraser' => 'icon-eraser',
+			  'icon-puzzle-piece' => 'icon-puzzle-piece',
+			  'icon-microphone' => 'icon-microphone',
+			  'icon-microphone-off' => 'icon-microphone-off',
+			  'icon-shield' => 'icon-shield',
+			  'icon-calendar-empty' => 'icon-calendar-empty',
+			  'icon-fire-extinguisher' => 'icon-fire-extinguisher',
+			  'icon-rocket' => 'icon-rocket',
+			  'icon-maxcdn' => 'icon-maxcdn',
+			  'icon-chevron-sign-left' => 'icon-chevron-sign-left',
+			  'icon-chevron-sign-right' => 'icon-chevron-sign-right',
+			  'icon-chevron-sign-up' => 'icon-chevron-sign-up',
+			  'icon-chevron-sign-down' => 'icon-chevron-sign-down',
+			  'icon-html5' => 'icon-html5',
+			  'icon-css3' => 'icon-css3',
+			  'icon-anchor' => 'icon-anchor',
+			  'icon-unlock-alt' => 'icon-unlock-alt',
+			  'icon-bullseye' => 'icon-bullseye',
+			  'icon-ellipsis-horizontal' => 'icon-ellipsis-horizontal',
+			  'icon-ellipsis-vertical' => 'icon-ellipsis-vertical',
+			  'icon-rss-sign' => 'icon-rss-sign',
+			  'icon-play-sign' => 'icon-play-sign',
+			  'icon-ticket' => 'icon-ticket',
+			  'icon-minus-sign-alt' => 'icon-minus-sign-alt',
+			  'icon-check-minus' => 'icon-check-minus',
+			  'icon-level-up' => 'icon-level-up',
+			  'icon-level-down' => 'icon-level-down',
+			  'icon-check-sign' => 'icon-check-sign',
+			  'icon-edit-sign' => 'icon-edit-sign',
+			  'icon-external-link-sign' => 'icon-external-link-sign',
+			  'icon-share-sign' => 'icon-share-sign',
+			  'icon-compass' => 'icon-compass',
+			  'icon-collapse' => 'icon-collapse',
+			  'icon-collapse-top' => 'icon-collapse-top',
+			  'icon-expand' => 'icon-expand',
+			  'icon-eur' => 'icon-eur',
+			  'icon-gbp' => 'icon-gbp',
+			  'icon-usd' => 'icon-usd',
+			  'icon-inr' => 'icon-inr',
+			  'icon-jpy' => 'icon-jpy',
+			  'icon-cny' => 'icon-cny',
+			  'icon-krw' => 'icon-krw',
+			  'icon-btc' => 'icon-btc',
+			  'icon-file' => 'icon-file',
+			  'icon-file-text' => 'icon-file-text',
+			  'icon-sort-by-alphabet' => 'icon-sort-by-alphabet',
+			  'icon-sort-by-alphabet-alt' => 'icon-sort-by-alphabet-alt',
+			  'icon-sort-by-attributes' => 'icon-sort-by-attributes',
+			  'icon-sort-by-attributes-alt' => 'icon-sort-by-attributes-alt',
+			  'icon-sort-by-order' => 'icon-sort-by-order',
+			  'icon-sort-by-order-alt' => 'icon-sort-by-order-alt',
+			  'icon-thumbs-up' => 'icon-thumbs-up',
+			  'icon-thumbs-down' => 'icon-thumbs-down',
+			  'icon-youtube-sign' => 'icon-youtube-sign',
+			  'icon-youtube' => 'icon-youtube',
+			  'icon-xing' => 'icon-xing',
+			  'icon-xing-sign' => 'icon-xing-sign',
+			  'icon-youtube-play' => 'icon-youtube-play',
+			  'icon-dropbox' => 'icon-dropbox',
+			  'icon-stackexchange' => 'icon-stackexchange',
+			  'icon-instagram' => 'icon-instagram',
+			  'icon-flickr' => 'icon-flickr',
+			  'icon-adn' => 'icon-adn',
+			  'icon-bitbucket' => 'icon-bitbucket',
+			  'icon-bitbucket-sign' => 'icon-bitbucket-sign',
+			  'icon-tumblr' => 'icon-tumblr',
+			  'icon-tumblr-sign' => 'icon-tumblr-sign',
+			  'icon-long-arrow-down' => 'icon-long-arrow-down',
+			  'icon-long-arrow-up' => 'icon-long-arrow-up',
+			  'icon-long-arrow-left' => 'icon-long-arrow-left',
+			  'icon-long-arrow-right' => 'icon-long-arrow-right',
+			  'icon-apple' => 'icon-apple',
+			  'icon-windows' => 'icon-windows',
+			  'icon-android' => 'icon-android',
+			  'icon-linux' => 'icon-linux',
+			  'icon-dribbble' => 'icon-dribbble',
+			  'icon-skype' => 'icon-skype',
+			  'icon-foursquare' => 'icon-foursquare',
+			  'icon-trello' => 'icon-trello',
+			  'icon-female' => 'icon-female',
+			  'icon-male' => 'icon-male',
+			  'icon-gittip' => 'icon-gittip',
+			  'icon-sun' => 'icon-sun',
+			  'icon-moon' => 'icon-moon',
+			  'icon-archive' => 'icon-archive',
+			  'icon-bug' => 'icon-bug',
+			  'icon-vk' => 'icon-vk',
+			  'icon-weibo' => 'icon-weibo',
+			  'icon-renren' => 'icon-renren',
+			  'fa-pagelines' => 'fa fa-pagelines',
+			  'fa-stack-exchange' => 'fa fa-stack-exchange',
+			  'fa-arrow-circle-o-right' => 'fa fa-arrow-circle-o-right',
+			  'fa-arrow-circle-o-left' => 'fa fa-arrow-circle-o-left',
+			  'fa-caret-square-o-left' => 'fa fa-caret-square-o-left',
+			  'fa-dot-circle-o' => 'fa fa-dot-circle-o',
+			  'fa-wheelchair' => 'fa fa-wheelchair',
+			  'fa-vimeo-square' => 'fa fa-vimeo-square',
+			  'fa-try' => 'fa fa-try',
+			  'fa-plus-square-o' => 'fa fa-plus-square-o',
+			  'fa-space-shuttle' => 'fa fa-space-shuttle',
+			  'fa-slack' => 'fa fa-slack',
+			  'fa-envelope-square' => 'fa fa-envelope-square',
+			  'fa-wordpress' => 'fa fa-wordpress',
+			  'fa-openid' => 'fa fa-openid',
+			  'fa-university' => 'fa fa-university',
+			  'fa-graduation-cap' => 'fa fa-graduation-cap',
+			  'fa-yahoo' => 'fa fa-yahoo',
+			  'fa-google' => 'fa fa-google',
+			  'fa-reddit' => 'fa fa-reddit',
+			  'fa-reddit-square' => 'fa fa-reddit-square',
+			  'fa-stumbleupon-circle' => 'fa fa-stumbleupon-circle',
+			  'fa-stumbleupon' => 'fa fa-stumbleupon',
+			  'fa-delicious' => 'fa fa-delicious',
+			  'fa-digg' => 'fa fa-digg',
+			  'fa-pied-piper-pp' => 'fa fa-pied-piper-pp',
+			  'fa-pied-piper-alt' => 'fa fa-pied-piper-alt',
+			  'fa-drupal' => 'fa fa-drupal',
+			  'fa-joomla' => 'fa fa-joomla',
+			  'fa-language' => 'fa fa-language',
+			  'fa-fax' => 'fa fa-fax',
+			  'fa-building' => 'fa fa-building',
+			  'fa-child' => 'fa fa-child',
+			  'fa-paw' => 'fa fa-paw',
+			  'fa-spoon' => 'fa fa-spoon',
+			  'fa-cube' => 'fa fa-cube',
+			  'fa-cubes' => 'fa fa-cubes',
+			  'fa-behance' => 'fa fa-behance',
+			  'fa-behance-square' => 'fa fa-behance-square',
+			  'fa-steam' => 'fa fa-steam',
+			  'fa-steam-square' => 'fa fa-steam-square',
+			  'fa-recycle' => 'fa fa-recycle',
+			  'fa-car' => 'fa fa-car',
+			  'fa-taxi' => 'fa fa-taxi',
+			  'fa-tree' => 'fa fa-tree',
+			  'fa-spotify' => 'fa fa-spotify',
+			  'fa-deviantart' => 'fa fa-deviantart',
+			  'fa-soundcloud' => 'fa fa-soundcloud',
+			  'fa-database' => 'fa fa-database',
+			  'fa-file-pdf-o' => 'fa fa-file-pdf-o',
+			  'fa-file-word-o' => 'fa fa-file-word-o',
+			  'fa-file-excel-o' => 'fa fa-file-excel-o',
+			  'fa-file-powerpoint-o' => 'fa fa-file-powerpoint-o',
+			  'fa-file-image-o' => 'fa fa-file-image-o',
+			  'fa-file-archive-o' => 'fa fa-file-archive-o',
+			  'fa-file-audio-o' => 'fa fa-file-audio-o',
+			  'fa-file-video-o' => 'fa fa-file-video-o',
+			  'fa-file-code-o' => 'fa fa-file-code-o',
+			  'fa-vine' => 'fa fa-vine',
+			  'fa-codepen' => 'fa fa-codepen',
+			  'fa-jsfiddle' => 'fa fa-jsfiddle',
+			  'fa-life-ring' => 'fa fa-life-ring',
+			  'fa-circle-o-notch' => 'fa fa-circle-o-notch',
+			  'fa-rebel' => 'fa fa-rebel',
+			  'fa-empire' => 'fa fa-empire',
+			  'fa-git-square' => 'fa fa-git-square',
+			  'fa-git' => 'fa fa-git',
+			  'fa-hacker-news' => 'fa fa-hacker-news',
+			  'fa-tencent-weibo' => 'fa fa-tencent-weibo',
+			  'fa-qq' => 'fa fa-qq',
+			  'fa-weixin' => 'fa fa-weixin',
+			  'fa-paper-plane' => 'fa fa-paper-plane',
+			  'fa-paper-plane-o' => 'fa fa-paper-plane-o',
+			  'fa-history' => 'fa fa-history',
+			  'fa-circle-thin' => 'fa fa-circle-thin',
+			  'fa-header' => 'fa fa-header',
+			  'fa-paragraph' => 'fa fa-paragraph',
+			  'fa-sliders' => 'fa fa-sliders',
+			  'fa-share-alt' => 'fa fa-share-alt',
+			  'fa-share-alt-square' => 'fa fa-share-alt-square',
+			  'fa-bomb' => 'fa fa-bomb',
+			  'fa-futbol-o' => 'fa fa-futbol-o',
+			  'fa-tty' => 'fa fa-tty',
+			  'fa-binoculars' => 'fa fa-binoculars',
+			  'fa-plug' => 'fa fa-plug',
+			  'fa-slideshare' => 'fa fa-slideshare',
+			  'fa-twitch' => 'fa fa-twitch',
+			  'fa-yelp' => 'fa fa-yelp',
+			  'fa-newspaper-o' => 'fa fa-newspaper-o',
+			  'fa-wifi' => 'fa fa-wifi',
+			  'fa-calculator' => 'fa fa-calculator',
+			  'fa-paypal' => 'fa fa-paypal',
+			  'fa-google-wallet' => 'fa fa-google-wallet',
+			  'fa-cc-visa' => 'fa fa-cc-visa',
+			  'fa-cc-mastercard' => 'fa fa-cc-mastercard',
+			  'fa-cc-discover' => 'fa fa-cc-discover',
+			  'fa-cc-amex' => 'fa fa-cc-amex',
+			  'fa-cc-paypal' => 'fa fa-cc-paypal',
+			  'fa-cc-stripe' => 'fa fa-cc-stripe',
+			  'fa-bell-slash' => 'fa fa-bell-slash',
+			  'fa-bell-slash-o' => 'fa fa-bell-slash-o',
+			  'fa-trash' => 'fa fa-trash',
+			  'fa-copyright' => 'fa fa-copyright',
+			  'fa-at' => 'fa fa-at',
+			  'fa-eyedropper' => 'fa fa-eyedropper',
+			  'fa-paint-brush' => 'fa fa-paint-brush',
+			  'fa-birthday-cake' => 'fa fa-birthday-cake',
+			  'fa-area-chart' => 'fa fa-area-chart',
+			  'fa-pie-chart' => 'fa fa-pie-chart',
+			  'fa-line-chart' => 'fa fa-line-chart',
+			  'fa-lastfm' => 'fa fa-lastfm',
+			  'fa-lastfm-square' => 'fa fa-lastfm-square',
+			  'fa-toggle-off' => 'fa fa-toggle-off',
+			  'fa-toggle-on' => 'fa fa-toggle-on',
+			  'fa-bicycle' => 'fa fa-bicycle',
+			  'fa-bus' => 'fa fa-bus',
+			  'fa-ioxhost' => 'fa fa-ioxhost',
+			  'fa-angellist' => 'fa fa-angellist',
+			  'fa-cc' => 'fa fa-cc',
+			  'fa-ils' => 'fa fa-ils',
+			  'fa-meanpath' => 'fa fa-meanpath',
+			  'fa-buysellads' => 'fa fa-buysellads',
+			  'fa-connectdevelop' => 'fa fa-connectdevelop',
+			  'fa-dashcube' => 'fa fa-dashcube',
+			  'fa-forumbee' => 'fa fa-forumbee',
+			  'fa-leanpub' => 'fa fa-leanpub',
+			  'fa-sellsy' => 'fa fa-sellsy',
+			  'fa-shirtsinbulk' => 'fa fa-shirtsinbulk',
+			  'fa-simplybuilt' => 'fa fa-simplybuilt',
+			  'fa-skyatlas' => 'fa fa-skyatlas',
+			  'fa-cart-plus' => 'fa fa-cart-plus',
+			  'fa-cart-arrow-down' => 'fa fa-cart-arrow-down',
+			  'fa-diamond' => 'fa fa-diamond',
+			  'fa-ship' => 'fa fa-ship',
+			  'fa-user-secret' => 'fa fa-user-secret',
+			  'fa-motorcycle' => 'fa fa-motorcycle',
+			  'fa-street-view' => 'fa fa-street-view',
+			  'fa-heartbeat' => 'fa fa-heartbeat',
+			  'fa-venus' => 'fa fa-venus',
+			  'fa-mars' => 'fa fa-mars',
+			  'fa-mercury' => 'fa fa-mercury',
+			  'fa-transgender' => 'fa fa-transgender',
+			  'fa-transgender-alt' => 'fa fa-transgender-alt',
+			  'fa-venus-double' => 'fa fa-venus-double',
+			  'fa-mars-double' => 'fa fa-mars-double',
+			  'fa-venus-mars' => 'fa fa-venus-mars',
+			  'fa-mars-stroke' => 'fa fa-mars-stroke',
+			  'fa-mars-stroke-v' => 'fa fa-mars-stroke-v',
+			  'fa-mars-stroke-h' => 'fa fa-mars-stroke-h',
+			  'fa-neuter' => 'fa fa-neuter',
+			  'fa-genderless' => 'fa fa-genderless',
+			  'fa-facebook-official' => 'fa fa-facebook-official',
+			  'fa-pinterest-p' => 'fa fa-pinterest-p',
+			  'fa-whatsapp' => 'fa fa-whatsapp',
+			  'fa-server' => 'fa fa-server',
+			  'fa-user-plus' => 'fa fa-user-plus',
+			  'fa-user-times' => 'fa fa-user-times',
+			  'fa-bed' => 'fa fa-bed',
+			  'fa-viacoin' => 'fa fa-viacoin',
+			  'fa-train' => 'fa fa-train',
+			  'fa-subway' => 'fa fa-subway',
+			  'fa-medium' => 'fa fa-medium',
+			  'fa-y-combinator' => 'fa fa-y-combinator',
+			  'fa-optin-monster' => 'fa fa-optin-monster',
+			  'fa-opencart' => 'fa fa-opencart',
+			  'fa-expeditedssl' => 'fa fa-expeditedssl',
+			  'fa-battery-full' => 'fa fa-battery-full',
+			  'fa-battery-three-quarters' => 'fa fa-battery-three-quarters',
+			  'fa-battery-half' => 'fa fa-battery-half',
+			  'fa-battery-quarter' => 'fa fa-battery-quarter',
+			  'fa-battery-empty' => 'fa fa-battery-empty',
+			  'fa-mouse-pointer' => 'fa fa-mouse-pointer',
+			  'fa-i-cursor' => 'fa fa-i-cursor',
+			  'fa-object-group' => 'fa fa-object-group',
+			  'fa-object-ungroup' => 'fa fa-object-ungroup',
+			  'fa-sticky-note' => 'fa fa-sticky-note',
+			  'fa-sticky-note-o' => 'fa fa-sticky-note-o',
+			  'fa-cc-jcb' => 'fa fa-cc-jcb',
+			  'fa-cc-diners-club' => 'fa fa-cc-diners-club',
+			  'fa-clone' => 'fa fa-clone',
+			  'fa-balance-scale' => 'fa fa-balance-scale',
+			  'fa-hourglass-o' => 'fa fa-hourglass-o',
+			  'fa-hourglass-start' => 'fa fa-hourglass-start',
+			  'fa-hourglass-half' => 'fa fa-hourglass-half',
+			  'fa-hourglass-end' => 'fa fa-hourglass-end',
+			  'fa-hourglass' => 'fa fa-hourglass',
+			  'fa-hand-rock-o' => 'fa fa-hand-rock-o',
+			  'fa-hand-paper-o' => 'fa fa-hand-paper-o',
+			  'fa-hand-scissors-o' => 'fa fa-hand-scissors-o',
+			  'fa-hand-lizard-o' => 'fa fa-hand-lizard-o',
+			  'fa-hand-spock-o' => 'fa fa-hand-spock-o',
+			  'fa-hand-pointer-o' => 'fa fa-hand-pointer-o',
+			  'fa-hand-peace-o' => 'fa fa-hand-peace-o',
+			  'fa-trademark' => 'fa fa-trademark',
+			  'fa-registered' => 'fa fa-registered',
+			  'fa-creative-commons' => 'fa fa-creative-commons',
+			  'fa-gg' => 'fa fa-gg',
+			  'fa-gg-circle' => 'fa fa-gg-circle',
+			  'fa-tripadvisor' => 'fa fa-tripadvisor',
+			  'fa-odnoklassniki' => 'fa fa-odnoklassniki',
+			  'fa-odnoklassniki-square' => 'fa fa-odnoklassniki-square',
+			  'fa-get-pocket' => 'fa fa-get-pocket',
+			  'fa-wikipedia-w' => 'fa fa-wikipedia-w',
+			  'fa-safari' => 'fa fa-safari',
+			  'fa-chrome' => 'fa fa-chrome',
+			  'fa-firefox' => 'fa fa-firefox',
+			  'fa-opera' => 'fa fa-opera',
+			  'fa-internet-explorer' => 'fa fa-internet-explorer',
+			  'fa-television' => 'fa fa-television',
+			  'fa-contao' => 'fa fa-contao',
+			  'fa-500px' => 'fa fa-500px',
+			  'fa-amazon' => 'fa fa-amazon',
+			  'fa-calendar-plus-o' => 'fa fa-calendar-plus-o',
+			  'fa-calendar-minus-o' => 'fa fa-calendar-minus-o',
+			  'fa-calendar-times-o' => 'fa fa-calendar-times-o',
+			  'fa-calendar-check-o' => 'fa fa-calendar-check-o',
+			  'fa-industry' => 'fa fa-industry',
+			  'fa-map-pin' => 'fa fa-map-pin',
+			  'fa-map-signs' => 'fa fa-map-signs',
+			  'fa-map-o' => 'fa fa-map-o',
+			  'fa-map' => 'fa fa-map',
+			  'fa-commenting' => 'fa fa-commenting',
+			  'fa-commenting-o' => 'fa fa-commenting-o',
+			  'fa-houzz' => 'fa fa-houzz',
+			  'fa-vimeo' => 'fa fa-vimeo',
+			  'fa-black-tie' => 'fa fa-black-tie',
+			  'fa-fonticons' => 'fa fa-fonticons',
+			  'fa-reddit-alien' => 'fa fa-reddit-alien',
+			  'fa-edge' => 'fa fa-edge',
+			  'fa-credit-card-alt' => 'fa fa-credit-card-alt',
+			  'fa-codiepie' => 'fa fa-codiepie',
+			  'fa-modx' => 'fa fa-modx',
+			  'fa-fort-awesome' => 'fa fa-fort-awesome',
+			  'fa-usb' => 'fa fa-usb',
+			  'fa-product-hunt' => 'fa fa-product-hunt',
+			  'fa-mixcloud' => 'fa fa-mixcloud',
+			  'fa-scribd' => 'fa fa-scribd',
+			  'fa-pause-circle' => 'fa fa-pause-circle',
+			  'fa-pause-circle-o' => 'fa fa-pause-circle-o',
+			  'fa-stop-circle' => 'fa fa-stop-circle',
+			  'fa-stop-circle-o' => 'fa fa-stop-circle-o',
+			  'fa-shopping-bag' => 'fa fa-shopping-bag',
+			  'fa-shopping-basket' => 'fa fa-shopping-basket',
+			  'fa-hashtag' => 'fa fa-hashtag',
+			  'fa-bluetooth' => 'fa fa-bluetooth',
+			  'fa-bluetooth-b' => 'fa fa-bluetooth-b',
+			  'fa-percent' => 'fa fa-percent',
+			  'fa-gitlab' => 'fa fa-gitlab',
+			  'fa-wpbeginner' => 'fa fa-wpbeginner',
+			  'fa-wpforms' => 'fa fa-wpforms',
+			  'fa-envira' => 'fa fa-envira',
+			  'fa-universal-access' => 'fa fa-universal-access',
+			  'fa-wheelchair-alt' => 'fa fa-wheelchair-alt',
+			  'fa-question-circle-o' => 'fa fa-question-circle-o',
+			  'fa-blind' => 'fa fa-blind',
+			  'fa-audio-description' => 'fa fa-audio-description',
+			  'fa-volume-control-phone' => 'fa fa-volume-control-phone',
+			  'fa-braille' => 'fa fa-braille',
+			  'fa-assistive-listening-systems' => 'fa fa-assistive-listening-systems',
+			  'fa-american-sign-language-interpreting' => 'fa fa-american-sign-language-interpreting',
+			  'fa-deaf' => 'fa fa-deaf',
+			  'fa-glide' => 'fa fa-glide',
+			  'fa-glide-g' => 'fa fa-glide-g',
+			  'fa-sign-language' => 'fa fa-sign-language',
+			  'fa-low-vision' => 'fa fa-low-vision',
+			  'fa-viadeo' => 'fa fa-viadeo',
+			  'fa-viadeo-square' => 'fa fa-viadeo-square',
+			  'fa-snapchat' => 'fa fa-snapchat',
+			  'fa-snapchat-ghost' => 'fa fa-snapchat-ghost',
+			  'fa-snapchat-square' => 'fa fa-snapchat-square',
+			  'fa-pied-piper' => 'fa fa-pied-piper',
+			  'fa-first-order' => 'fa fa-first-order',
+			  'fa-yoast' => 'fa fa-yoast',
+			  'fa-themeisle' => 'fa fa-themeisle',
+			  'fa-google-plus-official' => 'fa fa-google-plus-official',
+			  'fa-font-awesome' => 'fa fa-font-awesome'
+
+		);
+			
+	$steadysets = array(
+			  'steadysets-icon-type' => 'steadysets-icon-type',
+			  'steadysets-icon-box' => 'steadysets-icon-box',
+			  'steadysets-icon-archive' => 'steadysets-icon-archive',
+			  'steadysets-icon-envelope' => 'steadysets-icon-envelope',
+			  'steadysets-icon-email' => 'steadysets-icon-email',
+			  'steadysets-icon-files' => 'steadysets-icon-files',
+			  'steadysets-icon-uniE606' => 'steadysets-icon-uniE606',
+			  'steadysets-icon-connection-empty' => 'steadysets-icon-connection-empty',
+			  'steadysets-icon-connection-25' => 'steadysets-icon-connection-25',
+			  'steadysets-icon-connection-50' => 'steadysets-icon-connection-50',
+			  'steadysets-icon-connection-75' => 'steadysets-icon-connection-75',
+			  'steadysets-icon-connection-full' => 'steadysets-icon-connection-full',
+			  'steadysets-icon-microphone' => 'steadysets-icon-microphone',
+			  'steadysets-icon-microphone-off' => 'steadysets-icon-microphone-off',
+			  'steadysets-icon-book' => 'steadysets-icon-book',
+			  'steadysets-icon-cloud' => 'steadysets-icon-cloud',
+			  'steadysets-icon-book2' => 'steadysets-icon-book2',
+			  'steadysets-icon-star' => 'steadysets-icon-star',
+			  'steadysets-icon-phone-portrait' => 'steadysets-icon-phone-portrait',
+			  'steadysets-icon-phone-landscape' => 'steadysets-icon-phone-landscape',
+			  'steadysets-icon-tablet' => 'steadysets-icon-tablet',
+			  'steadysets-icon-tablet-landscape' => 'steadysets-icon-tablet-landscape',
+			  'steadysets-icon-laptop' => 'steadysets-icon-laptop',
+			  'steadysets-icon-uniE617' => 'steadysets-icon-uniE617',
+			  'steadysets-icon-barbell' => 'steadysets-icon-barbell',
+			  'steadysets-icon-stopwatch' => 'steadysets-icon-stopwatch',
+			  'steadysets-icon-atom' => 'steadysets-icon-atom',
+			  'steadysets-icon-syringe' => 'steadysets-icon-syringe',
+			  'steadysets-icon-pencil' => 'steadysets-icon-pencil',
+			  'steadysets-icon-chart' => 'steadysets-icon-chart',
+			  'steadysets-icon-bars' => 'steadysets-icon-bars',
+			  'steadysets-icon-cube' => 'steadysets-icon-cube',
+			  'steadysets-icon-image' => 'steadysets-icon-image',
+			  'steadysets-icon-crop' => 'steadysets-icon-crop',
+			  'steadysets-icon-graph' => 'steadysets-icon-graph',
+			  'steadysets-icon-select' => 'steadysets-icon-select',
+			  'steadysets-icon-bucket' => 'steadysets-icon-bucket',
+			  'steadysets-icon-mug' => 'steadysets-icon-mug',
+			  'steadysets-icon-clipboard' => 'steadysets-icon-clipboard',
+			  'steadysets-icon-lab' => 'steadysets-icon-lab',
+			  'steadysets-icon-bones' => 'steadysets-icon-bones',
+			  'steadysets-icon-pill' => 'steadysets-icon-pill',
+			  'steadysets-icon-bolt' => 'steadysets-icon-bolt',
+			  'steadysets-icon-health' => 'steadysets-icon-health',
+			  'steadysets-icon-map-marker' => 'steadysets-icon-map-marker',
+			  'steadysets-icon-stack' => 'steadysets-icon-stack',
+			  'steadysets-icon-newspaper' => 'steadysets-icon-newspaper',
+			  'steadysets-icon-uniE62F' => 'steadysets-icon-uniE62F',
+			  'steadysets-icon-coffee' => 'steadysets-icon-coffee',
+			  'steadysets-icon-bill' => 'steadysets-icon-bill',
+			  'steadysets-icon-sun' => 'steadysets-icon-sun',
+			  'steadysets-icon-vcard' => 'steadysets-icon-vcard',
+			  'steadysets-icon-shorts' => 'steadysets-icon-shorts',
+			  'steadysets-icon-drink' => 'steadysets-icon-drink',
+			  'steadysets-icon-diamond' => 'steadysets-icon-diamond',
+			  'steadysets-icon-bag' => 'steadysets-icon-bag',
+			  'steadysets-icon-calculator' => 'steadysets-icon-calculator',
+			  'steadysets-icon-credit-cards' => 'steadysets-icon-credit-cards',
+			  'steadysets-icon-microwave-oven' => 'steadysets-icon-microwave-oven',
+			  'steadysets-icon-camera' => 'steadysets-icon-camera',
+			  'steadysets-icon-share' => 'steadysets-icon-share',
+			  'steadysets-icon-bullhorn' => 'steadysets-icon-bullhorn',
+			  'steadysets-icon-user' => 'steadysets-icon-user',
+			  'steadysets-icon-users' => 'steadysets-icon-users',
+			  'steadysets-icon-user2' => 'steadysets-icon-user2',
+			  'steadysets-icon-users2' => 'steadysets-icon-users2',
+			  'steadysets-icon-unlocked' => 'steadysets-icon-unlocked',
+			  'steadysets-icon-unlocked2' => 'steadysets-icon-unlocked2',
+			  'steadysets-icon-lock' => 'steadysets-icon-lock',
+			  'steadysets-icon-forbidden' => 'steadysets-icon-forbidden',
+			  'steadysets-icon-switch' => 'steadysets-icon-switch',
+			  'steadysets-icon-meter' => 'steadysets-icon-meter',
+			  'steadysets-icon-flag' => 'steadysets-icon-flag',
+			  'steadysets-icon-home' => 'steadysets-icon-home',
+			  'steadysets-icon-printer' => 'steadysets-icon-printer',
+			  'steadysets-icon-clock' => 'steadysets-icon-clock',
+			  'steadysets-icon-calendar' => 'steadysets-icon-calendar',
+			  'steadysets-icon-comment' => 'steadysets-icon-comment',
+			  'steadysets-icon-chat-3' => 'steadysets-icon-chat-3',
+			  'steadysets-icon-chat-2' => 'steadysets-icon-chat-2',
+			  'steadysets-icon-chat-1' => 'steadysets-icon-chat-1',
+			  'steadysets-icon-chat' => 'steadysets-icon-chat',
+			  'steadysets-icon-zoom-out' => 'steadysets-icon-zoom-out',
+			  'steadysets-icon-zoom-in' => 'steadysets-icon-zoom-in',
+			  'steadysets-icon-search' => 'steadysets-icon-search',
+			  'steadysets-icon-trashcan' => 'steadysets-icon-trashcan',
+			  'steadysets-icon-tag' => 'steadysets-icon-tag',
+			  'steadysets-icon-download' => 'steadysets-icon-download',
+			  'steadysets-icon-paperclip' => 'steadysets-icon-paperclip',
+			  'steadysets-icon-checkbox' => 'steadysets-icon-checkbox',
+			  'steadysets-icon-checkbox-checked' => 'steadysets-icon-checkbox-checked',
+			  'steadysets-icon-checkmark' => 'steadysets-icon-checkmark',
+			  'steadysets-icon-refresh' => 'steadysets-icon-refresh',
+			  'steadysets-icon-reload' => 'steadysets-icon-reload',
+			  'steadysets-icon-arrow-right' => 'steadysets-icon-arrow-right',
+			  'steadysets-icon-arrow-down' => 'steadysets-icon-arrow-down',
+			  'steadysets-icon-arrow-up' => 'steadysets-icon-arrow-up',
+			  'steadysets-icon-arrow-left' => 'steadysets-icon-arrow-left',
+			  'steadysets-icon-settings' => 'steadysets-icon-settings',
+			  'steadysets-icon-battery-full' => 'steadysets-icon-battery-full',
+			  'steadysets-icon-battery-75' => 'steadysets-icon-battery-75',
+			  'steadysets-icon-battery-50' => 'steadysets-icon-battery-50',
+			  'steadysets-icon-battery-25' => 'steadysets-icon-battery-25',
+			  'steadysets-icon-battery-empty' => 'steadysets-icon-battery-empty',
+			  'steadysets-icon-battery-charging' => 'steadysets-icon-battery-charging',
+			  'steadysets-icon-uniE669' => 'steadysets-icon-uniE669',
+			  'steadysets-icon-grid' => 'steadysets-icon-grid',
+			  'steadysets-icon-list' => 'steadysets-icon-list',
+			  'steadysets-icon-wifi-low' => 'steadysets-icon-wifi-low',
+			  'steadysets-icon-folder-check' => 'steadysets-icon-folder-check',
+			  'steadysets-icon-folder-settings' => 'steadysets-icon-folder-settings',
+			  'steadysets-icon-folder-add' => 'steadysets-icon-folder-add',
+			  'steadysets-icon-folder' => 'steadysets-icon-folder',
+			  'steadysets-icon-window' => 'steadysets-icon-window',
+			  'steadysets-icon-windows' => 'steadysets-icon-windows',
+			  'steadysets-icon-browser' => 'steadysets-icon-browser',
+			  'steadysets-icon-file-broken' => 'steadysets-icon-file-broken',
+			  'steadysets-icon-align-justify' => 'steadysets-icon-align-justify',
+			  'steadysets-icon-align-center' => 'steadysets-icon-align-center',
+			  'steadysets-icon-align-right' => 'steadysets-icon-align-right',
+			  'steadysets-icon-align-left' => 'steadysets-icon-align-left',
+			  'steadysets-icon-file' => 'steadysets-icon-file',
+			  'steadysets-icon-file-add' => 'steadysets-icon-file-add',
+			  'steadysets-icon-file-settings' => 'steadysets-icon-file-settings',
+			  'steadysets-icon-mute' => 'steadysets-icon-mute',
+			  'steadysets-icon-heart' => 'steadysets-icon-heart',
+			  'steadysets-icon-enter' => 'steadysets-icon-enter',
+			  'steadysets-icon-volume-decrease' => 'steadysets-icon-volume-decrease',
+			  'steadysets-icon-wifi-mid' => 'steadysets-icon-wifi-mid',
+			  'steadysets-icon-volume' => 'steadysets-icon-volume',
+			  'steadysets-icon-bookmark' => 'steadysets-icon-bookmark',
+			  'steadysets-icon-screen' => 'steadysets-icon-screen',
+			  'steadysets-icon-map' => 'steadysets-icon-map',
+			  'steadysets-icon-measure' => 'steadysets-icon-measure',
+			  'steadysets-icon-eyedropper' => 'steadysets-icon-eyedropper',
+			  'steadysets-icon-support' => 'steadysets-icon-support',
+			  'steadysets-icon-phone' => 'steadysets-icon-phone',
+			  'steadysets-icon-email2' => 'steadysets-icon-email2',
+			  'steadysets-icon-volume-increase' => 'steadysets-icon-volume-increase',
+			  'steadysets-icon-wifi-full' => 'steadysets-icon-wifi-full'
+		);
+
+	$linecons = array(
+			  'linecon-icon-heart' => 'linecon-icon-heart',
+			  'linecon-icon-cloud' => 'linecon-icon-cloud',
+			  'linecon-icon-star' => 'linecon-icon-star',
+			  'linecon-icon-tv' => 'linecon-icon-tv',
+			  'linecon-icon-sound' => 'linecon-icon-sound',
+			  'linecon-icon-video' => 'linecon-icon-video',
+			  'linecon-icon-trash' => 'linecon-icon-trash',
+			  'linecon-icon-user' => 'linecon-icon-user',
+			  'linecon-icon-key' => 'linecon-icon-key',
+			  'linecon-icon-search' => 'linecon-icon-search',
+			  'linecon-icon-eye' => 'linecon-icon-eye',
+			  'linecon-icon-bubble' => 'linecon-icon-bubble',
+			  'linecon-icon-stack' => 'linecon-icon-stack',
+			  'linecon-icon-cup' => 'linecon-icon-cup',
+			  'linecon-icon-phone' => 'linecon-icon-phone',
+			  'linecon-icon-news' => 'linecon-icon-news',
+			  'linecon-icon-mail' => 'linecon-icon-mail',
+			  'linecon-icon-like' => 'linecon-icon-like',
+			  'linecon-icon-photo' => 'linecon-icon-photo',
+			  'linecon-icon-note' => 'linecon-icon-note',
+			  'linecon-icon-food' => 'linecon-icon-food',
+			  'linecon-icon-t-shirt' => 'linecon-icon-t-shirt',
+			  'linecon-icon-fire' => 'linecon-icon-fire',
+			  'linecon-icon-clip' => 'linecon-icon-clip',
+			  'linecon-icon-shop' => 'linecon-icon-shop',
+			  'linecon-icon-calendar' => 'linecon-icon-calendar',
+			  'linecon-icon-wallet' => 'linecon-icon-wallet',
+			  'linecon-icon-vynil' => 'linecon-icon-vynil',
+			  'linecon-icon-truck' => 'linecon-icon-truck',
+			  'linecon-icon-world' => 'linecon-icon-world',
+			  'linecon-icon-clock' => 'linecon-icon-clock',
+			  'linecon-icon-paperplane' => 'linecon-icon-paperplane',
+			  'linecon-icon-params' => 'linecon-icon-params',
+			  'linecon-icon-banknote' => 'linecon-icon-banknote',
+			  'linecon-icon-data' => 'linecon-icon-data',
+			  'linecon-icon-music' => 'linecon-icon-music',
+			  'linecon-icon-megaphone' => 'linecon-icon-megaphone',
+			  'linecon-icon-study' => 'linecon-icon-study',
+			  'linecon-icon-lab' => 'linecon-icon-lab',
+			  'linecon-icon-location' => 'linecon-icon-location',
+			  'linecon-icon-display' => 'linecon-icon-display',
+			  'linecon-icon-diamond' => 'linecon-icon-diamond',
+			  'linecon-icon-pen' => 'linecon-icon-pen',
+			  'linecon-icon-bulb' => 'linecon-icon-bulb',
+			  'linecon-icon-lock' => 'linecon-icon-lock',
+			  'linecon-icon-tag' => 'linecon-icon-tag',
+			  'linecon-icon-camera' => 'linecon-icon-camera',
+			  'linecon-icon-settings' => 'linecon-icon-settings'
+		);
+		
+	// Icon list
+	$icon_arr = array_merge($fa_icons, $steadysets, $linecons);
+
+	vc_map( array(
+	  "name" => __("Text With Icon", "js_composer"),
+	  "base" => "text-with-icon",
+	  "icon" => "icon-wpb-text-with-icon",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "weight" => 1,
+	  "description" => __('Add a text block with stylish icon', 'js_composer'),
+	  "params" => array(
+	    array(
 		  "type" => "dropdown",
-		  "heading" => esc_html__("Layout", "js_composer"),
-		  "param_name" => "layout",
+		  "heading" => __("Icon Type", "js_composer"),
+		  "param_name" => "icon_type",
 		  "admin_label" => true,
 		  "value" => array(
-				  "4 Columns" => "4",
-			    "3 Columns" => "3",
-					"2 Columns" => "2",
-			    "Fullwidth" => "fullwidth",
-			    "Constrained Fullwidth" => "constrained_fullwidth"
-			),
+			 "Font Icon" => "font_icon",
+			 "Image Icon" => "image_icon",
+		   ),
 		  'save_always' => true,
-		  "description" => esc_html__("Please select the layout you would like for your gallery ", "js_composer"),
-		  "dependency" => Array('element' => "type", 'value' => array('image_grid'))
-	));
-	vc_add_param("vc_gallery",array(
-	      "type" => 'checkbox',
-	      "heading" => esc_html__("Masonry Style", "js_composer"),
-	      "param_name" => "masonry_style",
-	      "description" => esc_html__("This will allow your gallery items to display in a masonry layout as opposed to a fixed grid. You can define your desired masonry size for each image when editing/adding them in the right hand side \"Attachment Details\" sidebar. Enabling this will override the \"Image Size\" field above. ", "js_composer"),
-	      "value" => Array(esc_html__("Yes, please", "js_composer") => 'true'),
-	      "dependency" => Array('element' => "type", 'value' => array('image_grid'))
-	));
-	
-	vc_add_param("vc_gallery",array(
-	      "type" => 'checkbox',
-	      "heading" => esc_html__("Bypass Image Cropping", "js_composer"),
-	      "param_name" => "bypass_image_cropping",
-	      "description" => esc_html__("Enabling this will cause your image grid to bypass the default Salient image cropping which varies based on the defined Masonry Sizing field. The result will be a traditional masonry layout rather than a structured grid", "js_composer"),
-	      "value" => Array(esc_html__("Yes, please", "js_composer") => 'true'),
-	      "dependency" => Array('element' => "masonry_style", 'not_empty' => true)
-	));
-	
-	vc_add_param("vc_gallery",array(
+		  "description" => __("Please select type of icon you would like for the text block", "js_composer")
+		),
+		array(
 		  "type" => "dropdown",
-		  "heading" => esc_html__("Item Spacing", "js_composer"),
-		  "param_name" => "item_spacing",
+		  "heading" => __("Icon", "js_composer"),
+		  "param_name" => "icon",
+		  "admin_label" => false,
+		  "value" => $icon_arr,
 		  'save_always' => true,
-			"dependency" => Array('element' => "type", 'value' => array('image_grid')),
-		  "value" => array(
-		  		"Default" => "default",
-			    "1px" => "1px",
-			    "2px" => "2px",
-			    "3px" => "3px",
-			    "4px" => "4px",
-			    "5px" => "5px",
-			    "6px" => "6px",
-			    "7px" => "7px",
-			    "8px" => "8px",
-			    "9px" => "9px",
-			    "10px" => "10px",
-			    "15px" => "15px",
-			    "20px" => "20px"
-			),
-		  "description" => esc_html__("Please select the spacing you would like between your items. ", "js_composer")
-	));
-	vc_add_param("vc_gallery",array(
-	      "type" => 'checkbox',
-	      "heading" => esc_html__("Constrain Max Columns to 4?", "js_composer"),
-	      "param_name" => "constrain_max_cols",
-	      "description" => esc_html__("This will change the max columns to 4 (default is 5 for fullwidth). Activating this will make it easier to create a grid with no empty spaces at the end of the list on all screen sizes.", "js_composer"),
-	      "value" => Array(esc_html__("Yes, please", "js_composer") => 'true'),
-	      "dependency" => Array('element' => "layout", 'value' => 'fullwidth')
-	));
-	vc_add_param("vc_gallery",array(
+		  "description" => __("Please select the icon you wish to use", "js_composer"),
+		  "dependency" => Array('element' => "icon_type", 'value' => array('font_icon'))
+		),
+	     array(
 		  "type" => "dropdown",
-		  "heading" => esc_html__("Gallery Style", "js_composer"),
-		  "param_name" => "gallery_style",
-		  "admin_label" => true,
-		  "value" => array(
-			    "Meta on hover w/ zoom + entire thumb link" => "7",
-			    "Meta overlaid w/ zoom effect on hover" => "3",
-			    'Meta overlaid w/ zoom effect on hover alt' => '5',
-					"Meta overlaid - bottom left aligned" => "8",
-					"Meta on hover + entire thumb link" => "2",
-			    "Meta from bottom on hover + entire thumb link" => "4",
-					"Meta below thumb w/ links on hover" => "1"
-			),
-		  'save_always' => true,
-		  "description" => esc_html__("Please select the style you would like your gallery to display in ", "js_composer"),
-		  "dependency" => Array('element' => "type", 'value' => array('image_grid'))
-	));
-
-	vc_add_param("vc_gallery",array(
-		  "type" => "dropdown",
-		  "heading" => esc_html__("Load In Animation", "js_composer"),
-		  "param_name" => "load_in_animation",
+		  "heading" => __("Color", "js_composer"),
+		  "param_name" => "color",
+		  "admin_label" => false,
 		  'save_always' => true,
 		  "value" => array(
-			    "None" => "none",
-			    "Fade In" => "fade_in",
-			    "Fade In From Bottom" => "fade_in_from_bottom",
-			    "Perspective Fade In" => "perspective"
-			),
-		  "description" => esc_html__("Please select the style you would like your projects to display in ", "js_composer"),
-		  "dependency" => Array('element' => "type", 'value' => array('image_grid'))
+			 "Accent-Color" => "Accent-Color",
+			 "Extra-Color-1" => "Extra-Color-1",
+			 "Extra-Color-2" => "Extra-Color-2",	
+			 "Extra-Color-3" => "Extra-Color-3"
+		   ),
+		  "description" => __("Please select the color you wish for icon to display in", "js_composer"),
+		  "dependency" => Array('element' => "icon_type", 'value' => array('font_icon'))
+		),
+		array(
+			"type" => "attach_image",
+			"class" => "",
+			"heading" => "Icon Image",
+			"param_name" => "icon_image",
+			"value" => "",
+			"description" => "",
+			"dependency" => Array('element' => "icon_type", 'value' => array('image_icon'))
+		),
+		array(
+	      "type" => "textarea_html",
+	      "holder" => "div",
+	      "heading" => __("Text Content", "js_composer"),
+	      "param_name" => "content",
+	      "value" => __("", "js_composer")
+	    )
+	  )
 	));
 
-	vc_add_param("vc_gallery",array(
-	      "type" => "dropdown",
-	      "heading" => esc_html__("On click", "js_composer"),
-	      "param_name" => "onclick",
-	      "value" => array( esc_html__("Do nothing", "js_composer") => "link_no", esc_html__("Open lightbox", "js_composer") => "link_image",  esc_html__("Open custom link", "js_composer") => "custom_link"),
-	      "description" => esc_html__("What to do when slide is clicked?", "js_composer"),
-	      'save_always' => true,
-	      "dependency" => Array('element' => "type", 'value' => array('nectarslider_style', 'flexslider_style', 'flickity_style'))
+
+
+	vc_map( array(
+	  "name" => __("Fancy Unordered List", "js_composer"),
+	  "base" => "fancy-ul",
+	  "icon" => "icon-wpb-fancy-ul",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "weight" => 1,
+	  "description" => __('Make your lists appealing', 'js_composer'),
+	  "params" => array(
+	    array(
+		  "type" => "dropdown",
+		  "heading" => __("Icon Type", "js_composer"),
+		  "param_name" => "icon_type",
+		  "admin_label" => false,
+		  'save_always' => true,
+		  "value" => array(
+			 "Standard Dash" => "standard_dash",
+			 "Font Icon" => "font_icon",
+		   ),
+		  "description" => __("Please select type of icon you would like for your fancy list", "js_composer")
+		),
+		array(
+		  "type" => "dropdown",
+		  "heading" => __("Icon", "js_composer"),
+		  "param_name" => "icon",
+		  "admin_label" => false,
+		  "value" => $icon_arr,
+		  'save_always' => true,
+		  "description" => __("Please select the icon you wish to use", "js_composer"),
+		  "dependency" => Array('element' => "icon_type", 'value' => array('font_icon'))
+		),
+	     array(
+		  "type" => "dropdown",
+		  "heading" => __("Color", "js_composer"),
+		  "param_name" => "color",
+		  "admin_label" => false,
+		  'save_always' => true,
+		  "value" => array(
+			 "Accent-Color" => "Accent-Color",
+			 "Extra-Color-1" => "Extra-Color-1",
+			 "Extra-Color-2" => "Extra-Color-2",	
+			 "Extra-Color-3" => "Extra-Color-3"
+		   ),
+		  "description" => __("Please select the color you wish for icon to display in", "js_composer"),
+		),
+		
+		array(
+			"type" => "checkbox",
+			"class" => "",
+			"heading" => "Enable Animation",
+			"value" => array("Enable Animation?" => "true" ),
+			"param_name" => "enable_animation",
+			"description" => "This will cause your list items to animate in one by one"
+		),
+
+		array(
+			"type" => "textfield",
+			"class" => "",
+			"heading" => "Animation Delay",
+			"param_name" => "delay",
+			"admin_label" => false,
+			"description" => "",
+			"dependency" => Array('element' => "enable_animation", 'not_empty' => true)
+		),
+
+		array(
+	      "type" => "textarea_html",
+	      "holder" => "div",
+	      "heading" => __("Text Content", "js_composer"),
+	      "param_name" => "content",
+	      "value" => __("", "js_composer"),
+	      "description" => __("Please use the Unordered List button <img src='".get_template_directory_uri() ."/nectar/assets/img/icons/ul.png' alt='unordered list' /> on the editor to create the points of your fancy list.", "js_composer")
+	    )
+	  )
 	));
-	vc_add_param("vc_gallery",array(
-	      "type" => "exploded_textarea",
-	      "heading" => esc_html__("Custom links", "js_composer"),
-	      "param_name" => "custom_links",
-	      "description" => esc_html__('Enter links for each slide here. Divide links with linebreaks (Enter).', 'js_composer'),
-	      "dependency" => Array('element' => "onclick", 'value' => array('custom_link'))
-	));
-
-	vc_add_param("vc_gallery",array(
-	      "type" => "dropdown",
-	      "heading" => esc_html__("Custom link target", "js_composer"),
-	      "param_name" => "custom_links_target",
-	      "description" => esc_html__('Select where to open  custom links.', 'js_composer'),
-	      "dependency" => Array('element' => "onclick", 'value' => array('custom_link')),
-	      'save_always' => true,
-	      'value' => array(esc_html__("Same window", "js_composer") => "_self", esc_html__("New window", "js_composer") => "_blank")
-	));
-	vc_add_param("vc_gallery",array(
-	      "type" => "textfield",
-	      "heading" => esc_html__("Extra class name", "js_composer"),
-	      "param_name" => "el_class",
-	      "description" => esc_html__("If you wish to style particular content element differently, then use this field to add a class name and then refer to it in your css file.", "js_composer")
-	));
-	
-
-
-
-
-	// Text With Icon
-	vc_lean_map('text-with-icon', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/text-with-icon.php');
-	
-
-	// Fancy UL
-	vc_lean_map('fancy-ul', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/fancy-ul.php');
-
-	
 
 	
 	// Morphing Outline
 	class WPBakeryShortCode_Morphing_Outline extends WPBakeryShortCode { }
+	vc_map( array(
+			"name" => "Morphing Outline",
+			"base" => "morphing_outline",
+			"icon" => "icon-wpb-morphing-outline",
+			"allowed_container_element" => 'vc_row',
+			"category" => __('Nectar Elements', 'js_composer'),
+			"description" => __('Wrap some text in a unqiue way to grab attention', 'js_composer'),
+			"params" => array(
+				array(
+			      "type" => "textarea",
+			      "holder" => "div",
+			      "heading" => __("Text Content", "js_composer"),
+			      "param_name" => "content",
+			      "value" => __("", "js_composer"),
+			      "description" => __("Enter the text that will be wrapped here", "js_composer"),
+			      "admin_label" => false
+			    ),
+				array(
+					"type" => "textfield",
+					"holder" => "div",
+					"class" => "",
+					"heading" => "Border Thickness",
+					"param_name" => "border_thickness",
+					"description" => "Don't include \"px\" in your string - default is \"5\"",
+					"admin_label" => false
+				),
+				array(
+					"type" => "colorpicker",
+					"class" => "",
+					"heading" => "Starting Color",
+					"param_name" => "starting_color",
+					"value" => "",
+					"description" => ""
+				),
+				array(
+					"type" => "colorpicker",
+					"class" => "",
+					"heading" => "Hover Color",
+					"param_name" => "hover_color",
+					"value" => "",
+					"description" => ""
+				)
 
-	vc_lean_map('morphing_outline', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/morphing_outline.php');
-
-
-	// Nectar Item Price
-	class WPBakeryShortCode_Nectar_Food_Menu_Item extends WPBakeryShortCode { }
-	vc_lean_map('nectar_food_menu_item', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_food_menu_item.php');
+			)
+	) );
 
 	
-
-	// Nectar Btn
 	class WPBakeryShortCode_Nectar_Btn extends WPBakeryShortCode { }
 
-	vc_lean_map('nectar_btn', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_btn.php');
+	vc_map( array(
+	  "name" => __("Button", "js_composer"),
+	  "base" => "nectar_btn",
+	  "icon" => "icon-wpb-btn",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "weight" => 1,
+	  "description" => __('Add a button', 'js_composer'),
+	  "params" => array(
+
+	  	array(
+			'type' => 'dropdown',
+			'heading' => __( 'Size', 'js_composer' ),
+			'value' => array(
+				__( 'Small', 'js_composer' ) => 'small',
+				__( 'Medium', 'js_composer' ) => 'medium',
+				__( 'Large', 'js_composer' ) => 'large',
+				__( 'Jumbo', 'js_composer' ) => 'jumbo',
+				__( 'Extra Jumbo', 'js_composer' ) => 'extra_jumbo',
+			),
+			'save_always' => true,
+			'param_name' => 'size',
+			'description' => __( 'Select your button size.', 'js_composer' ),
+		),
+		array(
+	      "type" => "textfield",
+	      "heading" => __("Link URL", "js_composer"),
+	      "param_name" => "url",
+	      "description" => __("The link for your button." , "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Text", "js_composer"),
+	      "param_name" => "text",
+	      "admin_label" => true,
+	      "description" => __("The text for your button." , "js_composer")
+	    ),
+	    array(
+			"type" => "checkbox",
+			"class" => "",
+			"heading" => __("Open Link In New Tab?", "js_composer"),
+	     	"param_name" => "open_new_tab",
+			"value" => Array(__("Yes", "js_composer") => 'true'),
+			"description" => ""
+		),
+		array(
+			'type' => 'dropdown',
+			'heading' => __( 'Style', 'js_composer' ),
+			'value' => array(
+				__( 'Regular', 'js_composer' ) => 'regular',
+				__( 'Regular With Tilt', 'js_composer' ) => 'regular-tilt',
+				__( 'See Through', 'js_composer' ) => 'see-through',
+				__( 'See Through Solid On Hover', 'js_composer' ) => 'see-through-2',
+				__( 'See Through Solid On Hover Alt', 'js_composer' ) => 'see-through-3',
+				__( 'See Through 3D', 'js_composer' ) => 'see-through-3d',
+			),		
+			'save_always' => true,
+			'param_name' => 'button_style',
+			'description' => __( 'Select your button style.', 'js_composer' ),
+		),
+		array(
+			'type' => 'dropdown',
+			'heading' => __( 'Button Color', 'js_composer' ),
+			'value' => array(
+				"Accent-Color" => "Accent-Color",
+				"Extra-Color-1" => "Extra-Color-1",
+				"Extra-Color-2" => "Extra-Color-2",	
+				"Extra-Color-3" => "Extra-Color-3"
+			),
+			'dependency' => array(
+				'element' => 'button_style',
+				'value' => array('regular-tilt'),
+			),
+			'save_always' => true,
+			'param_name' => 'button_color',
+			'description' => __( 'Select your button style.', 'js_composer' ),
+		),
+		array(
+			'type' => 'dropdown',
+			'heading' => __( 'Button Color', 'js_composer' ),
+			'value' => array(
+				"Accent-Color" => "Accent-Color",
+				"Extra-Color-1" => "Extra-Color-1",
+				"Extra-Color-2" => "Extra-Color-2",	
+				"Extra-Color-3" => "Extra-Color-3",
+				"Extra-Color-Gradient-1" => "extra-color-gradient-1",
+		 		"Extra-Color-Gradient-2" => "extra-color-gradient-2"
+			),
+			'save_always' => true,
+			'dependency' => array(
+				'element' => 'button_style',
+				'value' => array('regular','see-through'),
+			),
+			'param_name' => 'button_color_2',
+			'description' => __( 'Select your button style.', 'js_composer' ),
+		),
+		array(
+				"type" => "colorpicker",
+				"class" => "",
+				"heading" => "Color Override",
+				"param_name" => "color_override",
+				"value" => "",
+				"description" => "won't take effect on gradient colored btns",	
+			),
+		array(
+				"type" => "colorpicker",
+				"class" => "",
+				"heading" => "Hover BG Color",
+				"param_name" => "hover_color_override",
+				"dependency" => array('element' => "button_style", 'value' => array('see-through-2','see-through-3')),
+				"value" => "",
+				"description" => ""
+			),
+		array(
+			'type' => 'dropdown',
+			'heading' => __( 'Hover Text Color', 'js_composer' ),
+			'value' => array(
+				__( 'Light', 'js_composer' ) => '#ffffff',
+				__( 'Dark', 'js_composer' ) => '#000000'
+			),
+			'save_always' => true,
+			'param_name' => 'hover_text_color_override',
+			"dependency" => array('element' => "button_style", 'value' => array('see-through-2','see-through-3')),
+			'description' => __( 'Select the color that will be used for the text on hover', 'js_composer' ),
+		),
+		array(
+			'type' => 'dropdown',
+			'heading' => __( 'Icon library', 'js_composer' ),
+			'value' => array(
+				__( 'None', 'js_composer' ) => 'none',
+				__( 'Font Awesome', 'js_composer' ) => 'fontawesome',
+				__( 'Iconsmind', 'js_composer' ) => 'iconsmind',
+				__( 'Steadysets', 'js_composer' ) => 'steadysets',
+				__( 'Linecons', 'js_composer' ) => 'linecons',
+			),
+			'save_always' => true,
+			'param_name' => 'icon_family',
+			"dependency" => array('element' => "button_style", 'value' => array('regular','regular-tilt','see-through','see-through-2','see-through-3')),
+			'description' => __( 'Select icon library.', 'js_composer' ),
+		),
+		array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_fontawesome",
+	      "settings" => array( "iconsPerPage" => 4000),
+	      "dependency" => array('element' => "icon_family", 'emptyIcon' => false, 'value' => 'fontawesome'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_iconsmind",
+	      "settings" => array( 'type' => 'iconsmind', 'emptyIcon' => false, "iconsPerPage" => 4000),
+	      "dependency" => array('element' => "icon_family", 'value' => 'iconsmind'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_linecons",
+	      "settings" => array( 'type' => 'linecons', 'emptyIcon' => false, "iconsPerPage" => 4000),
+	      "dependency" => array('element' => "icon_family", 'value' => 'linecons'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_steadysets",
+	      "settings" => array( 'type' => 'steadysets', 'emptyIcon' => false, "iconsPerPage" => 4000),
+	      "dependency" => array('element' => "icon_family", 'value' => 'steadysets'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Margin <span>Top</span>", "js_composer"),
+	      "param_name" => "margin_top",
+	      "edit_field_class" => "col-md-2",
+	      "description" => __("." , "js_composer")
+	    ),
+		 array(
+	      "type" => "textfield",
+	      "heading" => __("<span>Right</span>", "js_composer"),
+	      "param_name" => "margin_right",
+	      "edit_field_class" => "col-md-2",
+	      "description" => __("" , "js_composer")
+	    ),
+		array(
+	      "type" => "textfield",
+	      "heading" => __("<span>Bottom</span>", "js_composer"),
+	      "param_name" => "margin_bottom",
+	      "edit_field_class" => "col-md-2",
+	      "description" => __("" , "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("<span>Left</span>", "js_composer"),
+	      "param_name" => "margin_left",
+	      "edit_field_class" => "col-md-2",
+	      "description" => __("" , "js_composer")
+	    ),
+	  )
+	));
 
 	
-
-	//Nectar Icon
 	class WPBakeryShortCode_Nectar_Icon extends WPBakeryShortCode { }
 
-	vc_lean_map('nectar_icon', null, $nectar_template_dir . '/nectar/nectar-vc-addons/nectar_maps/nectar_icon.php');
-
-	
+	vc_map( array(
+	  "name" => __("Icon", "js_composer"),
+	  "base" => "nectar_icon",
+	  "icon" => "icon-wpb-icons",
+	  "category" => __('Nectar Elements', 'js_composer'),
+	  "weight" => 1,
+	  "description" => __('Add a icon', 'js_composer'),
+	  "params" => array(
+		array(
+			'type' => 'dropdown',
+			'heading' => __( 'Icon library', 'js_composer' ),
+			'value' => array(
+				__( 'Font Awesome', 'js_composer' ) => 'fontawesome',
+				__( 'Iconsmind', 'js_composer' ) => 'iconsmind',
+				__( 'Linea', 'js_composer' ) => 'linea',
+				__( 'Steadysets', 'js_composer' ) => 'steadysets',
+				__( 'Linecons', 'js_composer' ) => 'linecons',
+			),
+			'save_always' => true,
+			'param_name' => 'icon_family',
+			'description' => __( 'Select icon library.', 'js_composer' ),
+		),
+		array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_fontawesome",
+	      "settings" => array( "iconsPerPage" => 4000),
+	      "dependency" => array('element' => "icon_family", 'emptyIcon' => false, 'value' => 'fontawesome'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_iconsmind",
+	      "settings" => array( 'type' => 'iconsmind', 'emptyIcon' => false, "iconsPerPage" => 4000),
+	      "dependency" => array('element' => "icon_family", 'value' => 'iconsmind'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_linea",
+	      "settings" => array( 'type' => 'linea', "emptyIcon" => true, "iconsPerPage" => 4000),
+	      "dependency" => Array('element' => "icon_family", 'value' => 'linea'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_linecons",
+	      "settings" => array( 'type' => 'linecons', 'emptyIcon' => false, "iconsPerPage" => 4000),
+	      "dependency" => array('element' => "icon_family", 'value' => 'linecons'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "iconpicker",
+	      "heading" => __("Icon", "js_composer"),
+	      "param_name" => "icon_steadysets",
+	      "settings" => array( 'type' => 'steadysets', 'emptyIcon' => false, "iconsPerPage" => 4000),
+	      "dependency" => array('element' => "icon_family", 'value' => 'steadysets'),
+	      "description" => __("Select icon from library.", "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Icon Size", "js_composer"),
+	      "param_name" => "icon_size",
+	      "description" => __("Don't include \"px\" in your string. e.g. 40 - the default is 50" , "js_composer")
+	    ),
+	    array(
+			"type" => "checkbox",
+			"class" => "",
+			"heading" => __("Enable Animation", "js_composer"),
+	     	"param_name" => "enable_animation",
+			"value" => array(__("Yes", "js_composer") => 'true'),
+			 "dependency" => array('element' => "icon_family", 'value' => 'linea'),
+			"description" => "This will cause the icon to appear to draw itself. <strong>Will not activate when using a gradient color.</strong>"
+		),
+		 array(
+	      "type" => "textfield",
+	      "heading" => __("Animation Delay", "js_composer"),
+	      "param_name" => "animation_delay",
+	      "dependency" => array('element' => "enable_animation", 'not_empty' => true),
+	      "description" => __("Enter delay (in milliseconds) if needed e.g. 150. This parameter comes in handy when creating the animate in \"one by one\" effect.", "js_composer")
+	    ),
+		 array(
+		 	'type' => 'dropdown',
+			'heading' => __( 'Animation Speed', 'js_composer' ),
+			'value' => array(
+				__( 'Slow', 'js_composer' ) => 'slow',
+				__( 'Medium', 'js_composer' ) => 'medium',
+				__( 'fast', 'js_composer' ) => 'fast'
+			),		
+			'save_always' => true,
+			'param_name' => 'animation_speed',
+			 "dependency" => array('element' => "enable_animation", 'not_empty' => true),
+			'description' => __( 'Select how fast you would like your icon to animate', 'js_composer' ),
+		),
+		array(
+			'type' => 'dropdown',
+			'heading' => __( 'Icon Style', 'js_composer' ),
+			'value' => array(
+				__('Icon Only', 'js_composer' ) => "default",
+				__('Border Basic', 'js_composer' ) => "border-basic",
+				__('Border W/ Hover Animation', 'js_composer' ) => "border-animation"
+			),
+			'save_always' => true,
+			'param_name' => 'icon_style',
+			'description' => __( 'Select your button style.', 'js_composer' ),
+		),
+		array(
+			'type' => 'dropdown',
+			'heading' => __( 'Icon Border Thickness', 'js_composer' ),
+			'value' => array(
+				__('1px', 'js_composer' ) => "1px",
+				__('2px', 'js_composer' ) => "2px",
+				__('3px', 'js_composer' ) => "3px",
+				__('4px', 'js_composer' ) => "4px",
+				__('5px', 'js_composer' ) => "5px"
+			),
+			'std' => '2px',
+			 "dependency" => array('element' => "icon_style", 'value' => array('border-basic','border-animation')),
+			'save_always' => true,
+			'param_name' => 'icon_border_thickness',
+		),
+		array(
+			'type' => 'dropdown',
+			'heading' => __( 'Icon Color', 'js_composer' ),
+			'value' => array(
+				"Accent-Color" => "Accent-Color",
+				"Extra-Color-1" => "Extra-Color-1",
+				"Extra-Color-2" => "Extra-Color-2",	
+				"Extra-Color-3" => "Extra-Color-3",
+				"Extra-Color-Gradient-1" => "extra-color-gradient-1",
+		 		"Extra-Color-Gradient-2" => "extra-color-gradient-2"
+			),
+			'save_always' => true,
+			'param_name' => 'icon_color',
+			'description' => __( 'Select your icon color.', 'js_composer' ),
+		),
+		 array(
+	      "type" => "textfield",
+	      "heading" => __("Link URL", "js_composer"),
+	      "param_name" => "url",
+	      "description" => __("The link for your button." , "js_composer")
+	    ),
+	    
+	    array(
+			"type" => "checkbox",
+			"class" => "",
+			"heading" => __("Open Link In New Tab?", "js_composer"),
+	     	"param_name" => "open_new_tab",
+			"value" => Array(__("Yes", "js_composer") => 'true'),
+			"description" => ""
+		),
+		array(
+			'type' => 'dropdown',
+			'heading' => __( 'Icon Padding', 'js_composer' ),
+			'value' => array(
+				__('10px', 'js_composer' ) => "10px",
+				__('15px', 'js_composer' ) => "15px",
+				__('20px', 'js_composer' ) => "20px",
+				__('25px', 'js_composer' ) => "25px",
+				__('30px', 'js_composer' ) => "30px",
+				__('35px', 'js_composer' ) => "35px",
+				__('40px', 'js_composer' ) => "40px",
+				__('45px', 'js_composer' ) => "45px",
+				__('50px', 'js_composer' ) => "50px",
+			),
+			'std' => '20px',
+			'save_always' => true,
+			'param_name' => 'icon_padding',
+		),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("Margin <span>Top</span>", "js_composer"),
+	      "param_name" => "margin_top",
+	      "edit_field_class" => "col-md-2",
+	      "description" => __("." , "js_composer")
+	    ),
+		 array(
+	      "type" => "textfield",
+	      "heading" => __("<span>Right</span>", "js_composer"),
+	      "param_name" => "margin_right",
+	      "edit_field_class" => "col-md-2",
+	      "description" => __("" , "js_composer")
+	    ),
+		array(
+	      "type" => "textfield",
+	      "heading" => __("<span>Bottom</span>", "js_composer"),
+	      "param_name" => "margin_bottom",
+	      "edit_field_class" => "col-md-2",
+	      "description" => __("" , "js_composer")
+	    ),
+	    array(
+	      "type" => "textfield",
+	      "heading" => __("<span>Left</span>", "js_composer"),
+	      "param_name" => "margin_left",
+	      "edit_field_class" => "col-md-2",
+	      "description" => __("" , "js_composer")
+	    ),
+	  )
+	));
 
 	
 

@@ -96,26 +96,7 @@
                         }
                     }
                 );
-                
-                /*nectar addition*/
-                el.find( 'label' ).each(function(){
-                  if($(this).find('img').is('[data-ntooltip]') && $(this).find('img').attr('data-ntooltip').length > 0) {
-                    
-                      $(this).qtip(
-                          {
-                              content: $(this).find('img').attr('data-ntooltip'),
-                              style: 'qtip-tipsy',
-                              position: {
-                                my: 'top center', // Position my top left...
-                                at: 'bottom center', // at the bottom right of...
-                              }
-                          }
-                      );
-                  }
-                });
-                /*nectar addition end*/
-                
-                
+
                 // Used to display a full image preview of a tile/pattern
                 el.find( '.tiles' ).qtip(
                     {

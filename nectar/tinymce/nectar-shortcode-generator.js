@@ -2,21 +2,7 @@ jQuery(document).ready(function($){
 	
 	$('body').on('click','.nectar-shortcode-generator',function(){
        
- 					
-				//The chosen one
-				if($('#nectar_shortcodes_chosen').length == 0) {
-					$("select#nectar-shortcodes").chosen();
-				}
-				//handle icon selection
-				$('select[name="icon-set-select"]').trigger('change');
-				$('#options-icon #color').trigger('change');
-				$('#options-button #color').trigger('change');
-				
-				//color pickers
-				$('#nectar-sc-generator input.popup-colorpicker.sc-gen').wpColorPicker({
-					palettes: ['#27CCC0', '#f6653c', '#2ac4ea', '#ae81f9', '#FF4629', '#78cd6e']
-				});
-				
+ 
             $.magnificPopup.open({
                 mainClass: 'mfp-zoom-in',
  	 		 	items: {

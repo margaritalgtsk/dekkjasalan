@@ -10,12 +10,15 @@
  * happen. When this occurs the version of the template file will be bumped and
  * the readme will list any important changes.
  *
- * @see     https://docs.woocommerce.com/document/template-structure/
+ * @see     https://docs.woothemes.com/document/template-structure/
+ * @author  WooThemes
  * @package WooCommerce/Templates
- * @version 3.4.0
+ * @version 2.6.1
  */
 
-defined( 'ABSPATH' ) || exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly
+}
 
 global $product, $woocommerce;
 
@@ -60,13 +63,7 @@ $product_style = (!empty($options['product_style'])) ? $options['product_style']
 $classes[] = $product_style;
 
 ?>
-
-<?php if( function_exists('wc_product_class') ) { ?>
-	<li <?php wc_product_class( $classes ); ?> >
-<?php } else { ?>
-	<li <?php post_class( $classes ); ?> >
-<?php } ?>
-
+<li <?php post_class( $classes ); ?>>
 
 	<?php do_action( 'woocommerce_before_shop_loop_item' ); ?>
 

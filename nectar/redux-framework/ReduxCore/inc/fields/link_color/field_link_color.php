@@ -13,11 +13,11 @@
  * along with Redux Framework. If not, see <http://www.gnu.org/licenses/>.
  *
  * @package     ReduxFramework
- * @subpackage  Field_Link_Color
+ * @subpackage  Field_Color_Gradient
  * @author      Luciano "WebCaos" Ubertini
  * @author      Daniel J Griffiths (Ghost1227)
  * @author      Dovy Paukstys
- * @author      Kevin Provance (kprovance)
+ * @author      Kevin Provance (kprovance) - fixing everyone else's bugs.
  * @version     3.0.0
  */
 
@@ -53,8 +53,7 @@ if ( ! class_exists( 'ReduxFramework_link_color' ) ) {
                 'regular' => true,
                 'hover'   => true,
                 'visited' => false,
-                'active'  => true,
-                'focus'   => false
+                'active'  => true
             );
             $this->field = wp_parse_args( $this->field, $defaults );
 
@@ -62,8 +61,7 @@ if ( ! class_exists( 'ReduxFramework_link_color' ) ) {
                 'regular' => '',
                 'hover'   => '',
                 'visited' => '',
-                'active'  => '',
-                'focus'  => ''
+                'active'  => ''
             );
 
             $this->value = wp_parse_args( $this->value, $defaults );
@@ -95,17 +93,12 @@ if ( ! class_exists( 'ReduxFramework_link_color' ) ) {
             }
 
             if ( $this->field['visited'] === true && $this->field['default']['visited'] !== false ) {
-                echo '<span class="linkColor"><strong>' . __( 'Visited', 'redux-framework' ) . '</strong>&nbsp;<input id="' . $this->field['id'] . '-visited" name="' . $this->field['name'] . $this->field['name_suffix'] . '[visited]' . '" value="' . $this->value['visited'] . '" class="redux-color redux-color-visited redux-color-init ' . $this->field['class'] . '"  type="text" data-default-color="' . $this->field['default']['visited'] . '" /></span>';
+                echo '<span class="linkColor"><strong>' . __( 'Visited', 'redux-framework' ) . '</strong>&nbsp;<input id="' . $this->field['id'] . '-hover" name="' . $this->field['name'] . $this->field['name_suffix'] . '[visited]' . '" value="' . $this->value['visited'] . '" class="redux-color redux-color-visited redux-color-init ' . $this->field['class'] . '"  type="text" data-default-color="' . $this->field['default']['visited'] . '" /></span>';
             }
 
             if ( $this->field['active'] === true && $this->field['default']['active'] !== false ) {
                 echo '<span class="linkColor"><strong>' . __( 'Active', 'redux-framework' ) . '</strong>&nbsp;<input id="' . $this->field['id'] . '-active" name="' . $this->field['name'] . $this->field['name_suffix'] . '[active]' . '" value="' . $this->value['active'] . '" class="redux-color redux-color-active redux-color-init ' . $this->field['class'] . '"  type="text" data-default-color="' . $this->field['default']['active'] . '" /></span>';
             }
-            
-            if ( $this->field['focus'] === true && $this->field['default']['focus'] !== false ) {
-                echo '<span class="linkColor"><strong>' . __( 'Focus', 'redux-framework' ) . '</strong>&nbsp;<input id="' . $this->field['id'] . '-focus" name="' . $this->field['name'] . $this->field['name_suffix'] . '[focus]' . '" value="' . $this->value['focus'] . '" class="redux-color redux-color-focus redux-color-init ' . $this->field['class'] . '"  type="text" data-default-color="' . $this->field['default']['focus'] . '" /></span>';
-            }
-            
         }
 
         /**
@@ -160,10 +153,6 @@ if ( ! class_exists( 'ReduxFramework_link_color' ) ) {
                 $style['active'] = 'color:' . $this->value['active'] . ';';
             }
 
-            if ( ! empty( $this->value['focus'] ) && $this->field['focus'] === true && $this->field['default']['focus'] !== false ) {
-                $style['focus'] = 'color:' . $this->value['focus'] . ';';
-            }
-            
             if ( ! empty( $style ) ) {
                 if ( ! empty( $this->field['output'] ) && is_array( $this->field['output'] ) ) {
                     $styleString = "";
@@ -173,12 +162,8 @@ if ( ! class_exists( 'ReduxFramework_link_color' ) ) {
                             $styleString .= implode( ",", $this->field['output'] ) . "{" . $value . '}';
                         } else {
                             if ( count( $this->field['output'] ) == 1 ) {
-                                foreach($this->field['output'] as $sel => $elem) {
-                                    continue;
-                                }
-                                
-                                if (strpos($elem, ',') != false) {
-                                    $selector_arr = explode(',',$elem);
+                                if (strpos($this->field['output'][0], ',') != false) {
+                                    $selector_arr = explode(',',$this->field['output'][0]);
                                     $sel_list = '';
                                     
                                     foreach($selector_arr as $idx => $selector) {
@@ -188,7 +173,7 @@ if ( ! class_exists( 'ReduxFramework_link_color' ) ) {
                                     $sel_list = rtrim($sel_list,',');
                                     $styleString .= $sel_list . "{" . $value . '}';
                                 } else {
-                                    $styleString .= $elem . ":" . $key . "{" . $value . '}';
+                                    $styleString .= $this->field['output'][0] . ":" . $key . "{" . $value . '}';
                                 }
                             } else {
                                 $blah = '';

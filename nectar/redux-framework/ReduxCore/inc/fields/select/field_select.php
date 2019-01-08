@@ -67,6 +67,10 @@ if ( ! class_exists( 'ReduxFramework_select' ) ) {
             //if
 
             if ( ! empty( $this->field['options'] ) ) {
+
+               
+
+
                 $multi = ( isset( $this->field['multi'] ) && $this->field['multi'] ) ? ' multiple="multiple"' : "";
 
                 if ( ! empty( $this->field['width'] ) ) {
@@ -96,7 +100,7 @@ if ( ! class_exists( 'ReduxFramework_select' ) ) {
                     foreach ( $this->value as $value ) {
                         $this->field['options'][ $value ] = $origOption[ $value ];
                     }
-            
+
                     if ( count( $this->field['options'] ) < count( $origOption ) ) {
                         foreach ( $origOption as $key => $value ) {
                             if ( ! in_array( $key, $this->field['options'] ) ) {
@@ -137,8 +141,6 @@ if ( ! class_exists( 'ReduxFramework_select' ) ) {
 
         private function make_option($id, $value, $group_name = '') {
 
-            /* nectar addition */
-
             //upgrade proof
             $old_options = get_option('salient');
             global $salient_redux;
@@ -148,12 +150,12 @@ if ( ! class_exists( 'ReduxFramework_select' ) ) {
             $legacy_select = (!empty($old_options[$fixed_ID])) ? $old_options[$fixed_ID] : '-';
             $display_val = (isset($salient_redux[$this->field['id']]) || $legacy_select == '-') ? $this->value : $legacy_select;
 
+                
             if ( is_array( $display_val ) ) {
                 $selected = ( is_array( $display_val ) && in_array( $id, $display_val ) ) ? ' selected="selected"' : '';
             } else {
                 $selected = selected( $display_val, $id, false );
             }
-            /* nectar addition end */
 
             echo '<option value="' . $id . '"' . $selected . '>' . $value . '</option>';                
         }
@@ -167,10 +169,6 @@ if ( ! class_exists( 'ReduxFramework_select' ) ) {
         public function enqueue() {
             wp_enqueue_style( 'select2-css' );
 
-            if (isset($this->field['sortable']) && $this->field['sortable']) {
-                wp_enqueue_script('jquery-ui-sortable');
-            }
-            
             wp_enqueue_script(
                 'redux-field-select-js',
                 ReduxFramework::$_url . 'inc/fields/select/field_select' . Redux_Functions::isMin() . '.js',

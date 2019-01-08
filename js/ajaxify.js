@@ -776,19 +776,8 @@ var linkr = 'link[href*="!"]', scrr = 'script[src*="!"]';
             if($wooCartHasProducts == 'product_added') $('#header-outer .sf-menu').addClass($wooCartHasProducts);
             //Update header attr
             if(fn('body').find('#header-outer[data-transparent-header]').length > 0) {
-            	 $('#header-outer').attr('data-transparent-header',fn('body').find('#header-outer').attr('data-transparent-header'));  
-               
-               //dark forced 
-               if(fn('body').is('[data-force-header-trans-color]')) {
-                 $('body').attr('data-force-header-trans-color',fn('body').attr('data-force-header-trans-color'));  
-               }
-               if($('body[data-force-header-trans-color="dark"]').length > 0) {
-                 $('#header-outer').addClass('dark-slide');
-               } else {
-                 $('#header-outer').removeClass('dark-slide');
-               }
-               
-               if($(window).scrollTop() == '0') $('#header-outer').addClass('transparent');
+            	 $('#header-outer').attr('data-transparent-header',fn('body').find('#header-outer').attr('data-transparent-header'));   
+                 if($(window).scrollTop() == '0') $('#header-outer').addClass('transparent');
             } else {
             	 $('#header-outer').removeAttr('data-transparent-header');  
                  $('#header-outer').removeClass('transparent');

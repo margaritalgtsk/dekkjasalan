@@ -140,7 +140,7 @@
                                         function( e ) {
                                             element = e.toJSON();
                                             preview_img = typeof element.sizes.thumbnail !== 'undefined' ? element.sizes.thumbnail.url : element.url;
-                                            preview_html = "<img class='redux-option-image' src='" + preview_img + "' />";
+                                            preview_html = "<img class='redux-option-image' src='" + preview_img + "' alt='' />";
                                             current_gallery.find( ".screenshot" ).append( preview_html );
 
                                             return e.id;

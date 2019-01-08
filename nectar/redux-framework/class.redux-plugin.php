@@ -26,7 +26,7 @@
              * @since       3.0.0
              */
 
-            const VERSION = '3.6.5';
+            const VERSION = '3.5.8.10';
 
             /**
              * @access      protected
@@ -407,12 +407,8 @@
              * @return      array The modified array of links
              */
             public function plugin_metalinks( $links, $file ) {
-              
-                return;
-                
-                /*nectar addition */
-                if ( strpos( $file, 'redux-framework.php' ) !== false ) {
-                /*nectar addition end */
+                if ( strpos( $file, 'redux-framework.php' ) !== false && is_plugin_active( $file ) ) {
+
                     $new_links = array(
                         '<a href="' . 'http://' . 'docs.reduxframework.com/" target="_blank">' . __( 'Docs', 'redux-framework' ) . '</a>',
                         '<a href="' . 'https://' . 'github.com/ReduxFramework/redux-framework" target="_blank">' . __( 'Repo', 'redux-framework' ) . '</a>',

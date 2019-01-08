@@ -26,9 +26,8 @@
              * @since ReduxFramework 1.0.0
              */
             function validate() {
-                if (isset($this->field['allowed_html'])) {
-                    $this->value = wp_kses( $this->value, $this->field['allowed_html'] );
-                }
+
+                $this->value = wp_kses( $this->value, $this->field['allowed_html'] );
             } //function
         } //class
     }

@@ -9,7 +9,7 @@
  *
  * @package     WBC_Importer - Extension for Importing demo content
  * @author      Webcreations907
- * @version     1.0.3
+ * @version     1.0.2
  */
 
 // Exit if accessed directly
@@ -22,7 +22,7 @@ if ( !class_exists( 'ReduxFramework_extension_wbc_importer' ) ) {
 
         public static $instance;
 
-        static $version = "1.0.3";
+        static $version = "1.0.2";
 
         protected $parent;
 
@@ -53,30 +53,14 @@ if ( !class_exists( 'ReduxFramework_extension_wbc_importer' ) ) {
             $this->parent = $parent;
 
             if ( !is_admin() ) return;
-            
-            /* do not load anywhere except needed (performance) */
-            if ( isset($_GET['page']) && $_GET['page'] == $this->parent->args['page_slug'] || isset($_REQUEST['demo_import_id']) || isset($_REQUEST['plugin_src']) ) { 
-              //init
-            } else {
-              //still add menu item
-              $this->add_importer_section();
-              return; 
-            }
-            
-            //plugin installer
-            if(file_exists( dirname( __FILE__ ) . '/wbc_importer/connekt-plugin-installer/class-connekt-plugin-installer.php' ) ) {
-              include_once('wbc_importer/connekt-plugin-installer/class-connekt-plugin-installer.php');
-            }
 
             //Hides importer section if anything but true returned. Way to abort :)
             if ( true !== apply_filters( 'wbc_importer_abort', true ) ) {
                 return;
             }
-            
-
 
             if ( empty( $this->extension_dir ) ) {
-                $this->extension_dir = get_template_directory() . '/nectar/redux-framework/extensions/wbc_importer/';
+                $this->extension_dir = trailingslashit( str_replace( '\\', '/', dirname( __FILE__ ) ) );
                 $this->extension_url = site_url( str_replace( trailingslashit( str_replace( '\\', '/', ABSPATH ) ), '', $this->extension_dir ) );
                 $this->demo_data_dir = apply_filters( "wbc_importer_dir_path", $this->extension_dir . 'demo-data/' );
             }
@@ -107,8 +91,7 @@ if ( !class_exists( 'ReduxFramework_extension_wbc_importer' ) ) {
             //Adds Importer section to panel
             $this->add_importer_section();
 
-            include $this->extension_dir.'inc/class-wbc-importer-progress.php';
-            $wbc_progress = new Wbc_Importer_Progress( $this->parent );
+
         }
 
         /**
@@ -118,7 +101,7 @@ if ( !class_exists( 'ReduxFramework_extension_wbc_importer' ) ) {
          * @return array list of files for demos
          */
         public function demoFiles() {
-        
+
             $this->filesystem = $this->parent->filesystem->execute( 'object' );
             $dir_array = $this->filesystem->dirlist( $this->demo_data_dir, false, true );
 
@@ -209,6 +192,11 @@ if ( !class_exists( 'ReduxFramework_extension_wbc_importer' ) ) {
 
                         }
 
+                        if ( !isset( $this->wbc_import_files['wbc-import-'.$x]['content_file'] ) ) {
+                            unset( $this->wbc_import_files['wbc-import-'.$x] );
+                            if ( $x > 1 ) $x--;
+                        }
+
                     }
 
                     $x++;
@@ -242,18 +230,22 @@ if ( !class_exists( 'ReduxFramework_extension_wbc_importer' ) ) {
                 }
 
                 $this->active_import_id = $_REQUEST['demo_import_id'];
-                
-                $this->active_import = array( $this->active_import_id => $this->wbc_import_files[$this->active_import_id] );
-                
-                $this->nectar_import_demo_content = ( isset($_REQUEST['import_demo_content']) ) ? $_REQUEST['import_demo_content'] : 'true';
-                $this->nectar_import_theme_option_settings = ( isset($_REQUEST['import_theme_option_settings']) ) ? $_REQUEST['import_theme_option_settings'] : 'true';
-                $this->nectar_import_demo_widgets = ( isset($_REQUEST['import_demo_widgets']) ) ? $_REQUEST['import_demo_widgets'] : 'true';
-                
-                if ( !isset( $import_parts['imported'] ) || true === $reimporting ) {
-                    include $this->extension_dir.'inc/init-installer.php';
-                    $installer = new Radium_Theme_Demo_Data_Importer( $this, $this->parent );
-                }else {
-                    echo esc_html__( "Demo Already Imported", 'salient' );
+
+                $import_parts         = $this->wbc_import_files[$this->active_import_id];
+
+                $this->active_import = array( $this->active_import_id => $import_parts );
+
+                $content_file        = $import_parts['directory'];
+                $demo_data_loc       = $this->demo_data_dir.$content_file;
+
+                if ( file_exists( $demo_data_loc.'/'.$import_parts['content_file'] ) && is_file( $demo_data_loc.'/'.$import_parts['content_file'] ) ) {
+
+                    if ( !isset( $import_parts['imported'] ) || true === $reimporting ) {
+                        include $this->extension_dir.'inc/init-installer.php';
+                        $installer = new Radium_Theme_Demo_Data_Importer( $this, $this->parent );
+                    }else {
+                        echo esc_html__( "Demo Already Imported", 'framework' );
+                    }
                 }
 
                 die();
@@ -279,14 +271,14 @@ if ( !class_exists( 'ReduxFramework_extension_wbc_importer' ) ) {
                 }
             }
 
-            $wbc_importer_label = trim( esc_html( apply_filters( 'wbc_importer_label', __( 'Demo Importer', 'salient' ) ) ) );
+            $wbc_importer_label = trim( esc_html( apply_filters( 'wbc_importer_label', __( 'Demo Importer', 'framework' ) ) ) );
 
-            $wbc_importer_label = ( !empty( $wbc_importer_label ) ) ? $wbc_importer_label : __( 'Demo Importer', 'salient' );
+            $wbc_importer_label = ( !empty( $wbc_importer_label ) ) ? $wbc_importer_label : __( 'Demo Importer', 'framework' );
 
             $this->parent->sections[] = array(
                 'id'     => 'wbc_importer_section',
                 'title'  => $wbc_importer_label,
-                'desc'   => '<p class="description">'. apply_filters( 'wbc_importer_description', esc_html__( 'Works best to import on a new install of WordPress.  If you\'re not using a fresh install, make sure you backup your current theme options as they will be overwritten.', 'salient' ) ).'</p>',
+                'desc'   => '<p class="description">'. apply_filters( 'wbc_importer_description', esc_html__( 'Works best to import on a new install of WordPress. If you\'re not using a fresh install, make sure you backup your current theme options as they will be overwritten.', 'framework' ) ).'</p>',
                 'icon'   => 'el-icon-website',
                 'fields' => array(
                     array(

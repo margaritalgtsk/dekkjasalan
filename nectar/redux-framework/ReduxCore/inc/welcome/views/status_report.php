@@ -547,7 +547,7 @@
                     }
 ?>
                     <tr>
-                        <td><?php echo esc_html( $plugin_name ); // Nectar addition ?></td>
+                        <td><?php echo $plugin_name; ?></td>
                         <td class="help">&nbsp;</td>
                         <td>
                             <?php echo sprintf( _x( 'by %s', 'by author', 'redux-framework' ), $plugin_data['Author'] ) . ' &ndash; ' . esc_html( $plugin_data['Version'] ) . $version_string . $network_string; ?>

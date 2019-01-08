@@ -36,7 +36,6 @@ switch($icon_family) {
 		break;
 	case 'linecons':
 		$icon = $icon_linecons;
-		wp_enqueue_style( 'vc_linecons' );
 		break;
 	case 'iconsmind':
 		$icon = $icon_iconsmind;
@@ -46,37 +45,19 @@ switch($icon_family) {
 		break;
 }
 
-$icon_size_val = (!empty($icon_style) && $icon_style == 'border-basic' || !empty($icon_style) && $icon_style == 'border-animation' || !empty($icon_style) && $icon_style == 'soft-bg') ? intval($icon_size)*1.5 : intval($icon_size);
-
-//regular icon only grad extra space
-if(!empty($icon_style) && $icon_style == 'default') {
-	if(strtolower($icon_color) == 'extra-color-gradient-1' || strtolower($icon_color) == 'extra-color-gradient-2') {
-		$icon_size_val = intval($icon_size)*1.2;
-	}
-}
-
 //needed because display: initial will cause imperfect cirles
 $grad_dimensions = '';
 if(strtolower($icon_color) == 'extra-color-gradient-1' || strtolower($icon_color) == 'extra-color-gradient-2') {
-	$circle_size = ($icon_size_val + (intval($icon_padding)*2) + intval($icon_border_thickness));
+	$circle_size = intval($icon_size) + (intval($icon_padding)*2);
 	$grad_dimensions = 'style="height: '. $circle_size .'px; width: '.$circle_size.'px;"';
 }
 
 //svg
-if($icon_family == 'linea' && $enable_animation == 'true' && $icon != '' && strlen($grad_dimensions) < 2) {
+if($icon_family == 'linea' && $enable_animation == 'true' && $icon != '') {
 	wp_enqueue_script('vivus'); 
 	$converted_icon = str_replace('-', '_', $icon);
 	$converted_icon = str_replace('icon_', '', $converted_icon);
-	$icon_markup = '<span class="svg-icon-holder" data-size="'. $icon_size . '" data-animation-speed="'.$animation_speed.'" data-animation="'.$enable_animation.'" data-animation-delay="'.$animation_delay.'" data-color="'.strtolower($icon_color) .'"><span>';
-	ob_start();
-	
-	//$icon_markup .= file_get_contents(get_template_directory() .'/css/fonts/svg/'. $converted_icon .'.svg');
-	get_template_part( 'css/fonts/svg/'. $converted_icon .'.svg' );
-	
-	$icon_markup .=  ob_get_contents();
-	ob_end_clean();
-	
-	$icon_markup .= '</span></span>';
+	$icon_markup = '<span class="svg-icon-holder" data-size="'. $icon_size . '" data-animation-speed="'.$animation_speed.'" data-animation="'.$enable_animation.'" data-animation-delay="'.$animation_delay.'" data-color="'.strtolower($icon_color) .'"><span>'. get_template_directory_uri() . '/css/fonts/svg/' . $converted_icon .'.svg</span></span>';
 } 
 //regular
 else {
@@ -87,7 +68,7 @@ else {
 	}
 
 	if(!empty($icon_family) && $icon_family != 'none') {
-		$icon_markup = '<i style="font-size: '.intval($icon_size).'px; line-height: '. $icon_size_val .'px; height: '. $icon_size_val .'px; width: '. $icon_size_val .'px;" class="' . $icon .'"></i>'; 
+		$icon_markup = '<i style="font-size: '.intval($icon_size).'px; line-height: '.intval($icon_size).'px; height: '.intval($icon_size).'px; width: '.intval($icon_size).'px;" class="' . $icon .'"></i>'; 
 		
 	} 
 	else {

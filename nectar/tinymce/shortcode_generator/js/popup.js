@@ -65,7 +65,16 @@ jQuery(document).ready(function($){
 	    });
 	}
   
-
+  
+  
+  
+    $('input.popup-colorpicker').wpColorPicker({
+    	palettes: ['#27CCC0', '#78cd6e', '#29c1e7', '#ae81f9', '#f78224', '#FF4629']
+    });
+  
+  
+  
+  	
             		
   function calcPercent() {
   	var $output = $("<span>");
@@ -80,8 +89,10 @@ jQuery(document).ready(function($){
   calcPercent();
 
 
+	//The chosen one
+	$("select#nectar-shortcodes").chosen();
    
-  $('#shortcode-content textarea').val('');
+    $('#shortcode-content textarea').val('');
     
     function dynamic_items(){
    	
@@ -321,7 +332,7 @@ jQuery(document).ready(function($){
 	 }
      
 	//events
-  $('#add-shortcode').click(function(){
+    $('#add-shortcode').click(function(){
     	
     	//column animation check (don't add the attrs when unnecessary)
     	var name = $('#nectar-shortcodes').val();
@@ -395,11 +406,11 @@ jQuery(document).ready(function($){
     	
     	//init ss if it's a bar graph
     	if( $clone.find('.percent').length > 0 ) {
-    		/*$($clone).find('.slider, .output').remove();
+    		$($clone).find('.slider, .output').remove();
     		$($clone).find('.percent').simpleSlider({
     			range: [1,100],
     			step: '1'
-    		});*/
+    		});
     	}
     	
     	//init new upload button and clear image if it's an upload
@@ -433,7 +444,7 @@ jQuery(document).ready(function($){
     //hide remove btn to start
     $('.remove-list-item').hide();
 	
-  $('body').on('keyup','.shortcode-dynamic-item-input, .shortcode-dynamic-item-text', function(){ dynamic_items(); });
+    $('body').on('keyup','.shortcode-dynamic-item-input, .shortcode-dynamic-item-text', function(){ dynamic_items(); });
 	$("body").on("input propertychange", '.shortcode-dynamic-item textarea', function(){ dynamic_items(); });
 	
 	//icon selection
@@ -480,8 +491,7 @@ jQuery(document).ready(function($){
 		
 		}
 	});
-  //moved to nectar-shortcode-generator.js
-	//$('select[name="icon-set-select"]').trigger('change');
+	$('select[name="icon-set-select"]').trigger('change');
 
 	//animation delay relation
 	$('#options-icon input.enable_animation').change(function(){
@@ -512,8 +522,7 @@ jQuery(document).ready(function($){
 			$('#options-icon select#animation_speed, #options-icon input[data-attrname="animation_delay"]').removeClass('skip-processing');
 		}
 	});
-  //moved to nectar-shortcode-generator.js
-	//$('#options-icon #color').trigger('change');
+	$('#options-icon #color').trigger('change');
 
 	//starting category population
 	$('.starting_category').hide();
@@ -629,8 +638,7 @@ jQuery(document).ready(function($){
 		}
 	});
 	
-  //moved to nectar-shortcode-generator.js
-	//$('#options-button #color').trigger('change');
+	$('#options-button #color').trigger('change');
 	
 	
 	function resetFileds(){

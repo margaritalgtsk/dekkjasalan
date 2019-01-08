@@ -108,10 +108,8 @@ if ( !class_exists ( 'ReduxFramework_checkbox' ) ) {
 
                 echo '</ul>';
             } else if ( empty ( $this->field[ 'data' ] ) ) {
-
-                /* nectar addition */
-
-                 //upgrade proof
+                
+                //upgrade proof
                 $old_options = get_option('salient');
                 global $salient_redux;
 
@@ -119,6 +117,7 @@ if ( !class_exists ( 'ReduxFramework_checkbox' ) ) {
                 $fixed_ID = $this->field['id'];
                 $legacy_cehckbox = (!empty($old_options[$fixed_ID])) ? $old_options[$fixed_ID] : '-';
                 $display_val = (isset($salient_redux[$this->field['id']]) || $legacy_cehckbox == '-') ? $this->value : $legacy_cehckbox;
+
 
                 echo (!empty ( $this->field[ 'desc' ] ) ) ? ' <ul class="data-full"><li><label for="' . strtr ( $this->parent->args[ 'opt_name' ] . '[' . $this->field[ 'id' ] . ']', array(
                             '[' => '_',
@@ -134,8 +133,6 @@ if ( !class_exists ( 'ReduxFramework_checkbox' ) ) {
                 ) ) . '" value="1" class="checkbox ' . $this->field[ 'class' ] . '" ' . checked ( $display_val, '1', false ) . '/>';
                 echo isset( $this->field[ 'label' ] ) ? ' ' . $this->field[ 'label' ] : '';
                 echo '</label></li></ul>';
-
-                /* nectar addition end */
             }
         }
 

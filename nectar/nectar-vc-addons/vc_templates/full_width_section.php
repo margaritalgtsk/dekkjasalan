@@ -126,8 +126,8 @@
 	if($video_bg) {
 		
 		if ( floatval(get_bloginfo('version')) >= "3.6" ) {
-			//wp_enqueue_script('wp-mediaelement');
-			//wp_enqueue_style('wp-mediaelement');
+			wp_enqueue_script('wp-mediaelement');
+			wp_enqueue_style('wp-mediaelement');
 		} else {
 			//register media element for WordPress 3.5
 			wp_register_script('wp-mediaelement', get_template_directory_uri() . '/js/mediaelement-and-player.min.js', array('jquery'), '1.0', TRUE);

@@ -59,9 +59,7 @@ if ( ! class_exists( 'ReduxFramework_color' ) ) {
          */
         public function render() {
 
-            /* nectar addition */
-
-            //upgrade proof
+             //upgrade proof
             $old_options = get_option('salient');
             global $salient_redux;
 
@@ -69,12 +67,10 @@ if ( ! class_exists( 'ReduxFramework_color' ) ) {
             $fixed_ID = $this->field['id'];
             $legacy_color = (!empty($old_options[$fixed_ID])) ? $old_options[$fixed_ID] : '-';
             $display_val = (isset($salient_redux[$this->field['id']]) || $legacy_color == '-') ? $this->value : $legacy_color;
-
+   
             echo '<input data-id="' . $this->field['id'] . '" name="' . $this->field['name'] . $this->field['name_suffix'] . '" id="' . $this->field['id'] . '-color" class="redux-color redux-color-init ' . $this->field['class'] . '"  type="text" value="' . $display_val . '" data-oldcolor=""  data-default-color="' . ( isset( $this->field['default'] ) ? $this->field['default'] : "" ) . '" />';
             echo '<input type="hidden" class="redux-saved-color" id="' . $this->field['id'] . '-saved-color' . '" value="">';
 
-            /* nectar addition end */
-            
             if ( ! isset( $this->field['transparent'] ) || $this->field['transparent'] !== false ) {
 
                 $tChecked = "";

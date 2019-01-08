@@ -5,9 +5,7 @@ extract(shortcode_atts(array("el_class" => '', 'style' => 'default'), $atts));
 	$columns = explode("[pricing_column", $content);
 	$columnsNum = count($columns);
 	$columnsNum = $columnsNum - 1;
-	
-	$column_class = '';
-	
+
 	switch ($columnsNum) {
 		case '2' :
 			$column_class = 'two-cols';

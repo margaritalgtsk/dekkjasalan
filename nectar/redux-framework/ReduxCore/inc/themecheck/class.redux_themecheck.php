@@ -104,7 +104,7 @@
             public static function get_redux_instance() {
 
                 // If the single instance hasn't been set, set it now.
-                if ( null == self::$redux && ReduxFramework::$_as_plugin ) {
+                if ( null == self::$redux ) {
                     self::$redux = new ReduxFramework();
                     self::$redux->init();
                 }

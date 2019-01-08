@@ -73,12 +73,6 @@ if ( ! class_exists( 'ReduxFramework_image_select' ) ) {
                     if ( ! isset( $v['title'] ) ) {
                         $v['title'] = '';
                     }
-                    
-                    /*nectar addition*/
-                    if ( ! isset( $v['tooltip'] ) ) {
-                        $v['tooltip'] = '';
-                    }
-                    /*nectar addition end*/
 
                     if ( ! isset( $v['alt'] ) ) {
                         $v['alt'] = $v['title'];
@@ -184,7 +178,7 @@ if ( ! class_exists( 'ReduxFramework_image_select' ) ) {
                     if ( ! empty( $this->field['tiles'] ) && $this->field['tiles'] == true ) {
                         echo '<span class="tiles ' . $v['class'] . '" style="background-image: url(' . $v['img'] . ');" rel="' . $v['img'] . '"">&nbsp;</span>';
                     } else {
-                        echo '<img src="' . $v['img'] . '" title="'. $v['alt'] . '" alt="' . $v['alt'] . '" data-ntooltip="'.$v['tooltip'].'" class="' . $v['class'] . '" style="' . $style . '"' . $presets . $merge . ' />';
+                        echo '<img src="' . $v['img'] . '" alt="' . $v['alt'] . '" class="' . $v['class'] . '" style="' . $style . '"' . $presets . $merge . ' />';
                     }
 
                     if ( $v['title'] != '' ) {

@@ -1620,13 +1620,6 @@ $.magnificPopup.registerModule(IFRAME_NS, {
 				id: 'v=', 
 				src: '//www.youtube.com/embed/%id%?autoplay=1'
 			},
-      /*nectar addition*/
-      youtube_compressed_url: {
-				index: 'youtu.be/', 
-				id: '/', 
-				src: '//www.youtube.com/embed/%id%?autoplay=1'
-			},
-      /*nectar addition end*/
 			vimeo: {
 				index: 'vimeo.com/',
 				id: '/',

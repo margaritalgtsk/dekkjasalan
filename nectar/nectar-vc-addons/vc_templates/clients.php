@@ -1,6 +1,6 @@
 <?php 
 
-extract(shortcode_atts(array("carousel" => "false", "additional_padding" => "", "hover_effect"=> 'opacity', "fade_in_animation" => "false", "columns" => '4', "disable_autorotate" => 'false'), $atts));
+extract(shortcode_atts(array("carousel" => "false", "fade_in_animation" => "false", "columns" => '4', "disable_autorotate" => 'false'), $atts));
 	
 $opening = null;
 $closing = null;
@@ -30,11 +30,11 @@ if($carousel == "true"){
 	
 	$autorotate = (!empty($disable_autorotate) && $disable_autorotate == 'true') ? ' disable-autorotate' : null;
 	
-	$opening .= '<div class="carousel-wrap"><div class="row carousel clients '.$column_class.' ' .$animation . $autorotate.'" data-he="'.$hover_effect.'" data-additional_padding="'.$additional_padding.'" data-max="'.$columns.'">';
+	$opening .= '<div class="carousel-wrap"><div class="row carousel clients '.$column_class.' ' .$animation . $autorotate.'" data-max="'.$columns.'">';
 	$closing .= '</div></div>';
 }
 else{
-	$opening .= '<div class="clients no-carousel '.$column_class.' ' .$animation.'" data-he="'.$hover_effect.'" data-additional_padding="'.$additional_padding.'">';
+	$opening .= '<div class="clients no-carousel '.$column_class.' ' .$animation.'">';
 	$closing .= '</div>';
 }
 

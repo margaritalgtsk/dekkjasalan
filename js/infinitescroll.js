@@ -133,8 +133,8 @@
             // loading.selector - if we want to place the load message in a specific selector, defaulted to the contentSelector
             opts.loading.selector = opts.loading.selector || opts.contentSelector;
 
-            var ascend_loader = ($('body').hasClass('ascend') || $('body').hasClass('material')) ? '<span class="default-loading-icon spin"></span>' : '';
-            var ascend_loader_class = ($('body').hasClass('ascend') || $('body').hasClass('material')) ? 'default_loader ' : '';
+            var ascend_loader = ($('body').hasClass('ascend')) ? '<span class="default-loading-icon spin"></span>' : '';
+            var ascend_loader_class = ($('body').hasClass('ascend')) ? 'default_loader ' : '';
 
             // Define loading.msg
             opts.loading.msg = opts.loading.msg || $('<div class="infscr-loading-wrap"><div id="infscr-loading" class='+ascend_loader_class+'><img alt="Loading..." src="' + opts.loading.img + '" /> '+ascend_loader+' <div>' + opts.loading.msgText + '</div></div></div>');
@@ -151,11 +151,11 @@
 			var self = this;
 
             // determine loading.start actions
-            if($('.post-area.infinite_scroll').length > 0) { 
-                if($('.post-area.infinite_scroll.span_9').length > 0) {
+            if($('#post-area.infinite_scroll').length > 0) { 
+                if($('#post-area.infinite_scroll.span_9').length > 0) {
                     var $locationToAppend = '#sidebar';
                 } else {
-                    var $locationToAppend = '.post-area.infinite_scroll';
+                    var $locationToAppend = '#post-area.infinite_scroll';
                 }
             } else { 
                 var $locationToAppend = '.portfolio-items.infinite_scroll';
@@ -207,7 +207,7 @@
 			}
 			
 			
-			$('.portfolio-wrap, .post-area.masonry').css('margin-bottom',0);
+			$('.portfolio-wrap, #post-area.masonry').css('margin-bottom',0);
 
             // Return true to indicate successful creation
             return true;

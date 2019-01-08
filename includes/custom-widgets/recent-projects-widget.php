@@ -1,10 +1,5 @@
 <?php
 
-if ( !defined( 'ABSPATH') ) {
-	exit('Direct script access denied.');
-}
-
-
 function pn_get_attachment_id_from_url( $attachment_url = '' ) {
  
 	global $wpdb;
@@ -45,8 +40,8 @@ add_action('widgets_init', 'Recent_Projects_init');
 class Recent_Projects_Widget extends WP_Widget {
 
 	function __construct() {
-		$widget_ops = array('classname' => 'recent_projects_widget', 'description' => __( "The most recent projects on your site.",'salient'));
-		parent::__construct('recent-projects', esc_html__('Recent Projects','salient'), $widget_ops);
+		$widget_ops = array('classname' => 'recent_projects_widget', 'description' => __( "The most recent projects on your site.",NECTAR_THEME_NAME));
+		parent::__construct('recent-projects', __('Recent Projects',NECTAR_THEME_NAME), $widget_ops);
 		$this->alt_option_name = 'recent_projects_widget';
 
 		add_action( 'save_post', array(&$this, 'flush_widget_cache') );
@@ -63,14 +58,14 @@ class Recent_Projects_Widget extends WP_Widget {
 			$cache = array();
 
 		if ( isset($cache[$args['widget_id']]) ) {
-			echo $cache[$args['widget_id']]; // WPCS: XSS ok.
+			echo $cache[$args['widget_id']];
 			return;
 		}
 
 		ob_start();
 		extract($args);
 
-		$title = apply_filters('widget_title', empty($instance['title']) ? esc_html__('Recent Projects','salient') : $instance['title']);
+		$title = apply_filters('widget_title', empty($instance['title']) ? __('Recent Projects',NECTAR_THEME_NAME) : $instance['title']);
 		if ( !$number = (int) $instance['number'] )
 			$number = 6;
 		else if ( $number < 1 )
@@ -81,18 +76,17 @@ class Recent_Projects_Widget extends WP_Widget {
 		$r = new WP_Query(array('post_type' => 'portfolio', 'posts_per_page' => $number));
 		if ($r->have_posts()) :
 ?>
-		<?php echo $before_widget; // WPCS: XSS ok. ?>
-		<?php if ( $title ) echo $before_title . $title . $after_title; // WPCS: XSS ok. ?>
+		<?php echo $before_widget; ?>
+		<?php if ( $title ) echo $before_title . $title . $after_title; ?>
 		<div>
 			<?php  while ($r->have_posts()) : $r->the_post(); 
 			
 			global $post;
 			
 			$custom_project_link = get_post_meta($post->ID, '_nectar_external_project_url', true);
-			$the_project_link = (!empty($custom_project_link)) ? $custom_project_link : esc_url(get_permalink());  
-			$custom_content_project = get_post_meta($post->ID, '_nectar_portfolio_custom_grid_item', true); ?>	
+			$the_project_link = (!empty($custom_project_link)) ? $custom_project_link : get_permalink(); ?>	 
 				
-			<a href="<?php echo esc_url( $the_project_link ); ?>" data-custom-grid-item="<?php echo esc_attr( $custom_content_project ); ?>" title="<?php echo esc_attr(get_the_title() ? get_the_title() : get_the_ID()); ?>">
+			<a href="<?php echo $the_project_link; ?>" title="<?php echo esc_attr(get_the_title() ? get_the_title() : get_the_ID()); ?>">
 				<?php 
 
 				//custom thumbnail
@@ -112,7 +106,7 @@ class Recent_Projects_Widget extends WP_Widget {
 			</a> 
 			<?php endwhile; ?>
 		</div>
-		<?php echo $after_widget; // WPCS: XSS ok. ?>
+		<?php echo $after_widget; ?>
 <?php
 			wp_reset_query();  // Restore global post data stomped by the_post().
 		endif;
@@ -147,12 +141,12 @@ class Recent_Projects_Widget extends WP_Widget {
 		else if ( $number > 9 )
 			$number = 9;
 ?>
-		<p><label for="<?php echo wp_kses_post( $this->get_field_id('title') ); ?>"><?php _e('Title:', 'salient'); ?></label>
-		<input class="widefat" id="<?php echo wp_kses_post( $this->get_field_id('title') ); ?>" name="<?php echo wp_kses_post( $this->get_field_name('title') ); ?>" type="text" value="<?php echo wp_kses_post( $title ); ?>" /></p>
+		<p><label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Title:', NECTAR_THEME_NAME); ?></label>
+		<input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo $title; ?>" /></p>
 
-		<p><label for="<?php echo esc_attr( $this->get_field_id('number') ); ?>"><?php _e('Number of projects to show:', 'salient'); ?></label>
-		<input id="<?php echo esc_attr( $this->get_field_id('number') ); ?>" name="<?php echo esc_attr( $this->get_field_name('number') ); ?>" type="text" value="<?php echo esc_attr( $number ); ?>" size="2" /><br />
-		<small><?php _e('Change in increments of 3 (at most 9)', 'salient'); ?></small></p>
+		<p><label for="<?php echo $this->get_field_id('number'); ?>"><?php _e('Number of projects to show:', NECTAR_THEME_NAME); ?></label>
+		<input id="<?php echo $this->get_field_id('number'); ?>" name="<?php echo $this->get_field_name('number'); ?>" type="text" value="<?php echo $number; ?>" size="2" /><br />
+		<small><?php _e('Change in increments of 3 (at most 9)', NECTAR_THEME_NAME); ?></small></p>
 <?php
 	}
 }

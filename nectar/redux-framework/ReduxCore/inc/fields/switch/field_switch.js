@@ -50,9 +50,6 @@
 
                         $( '.cb-disable', parent ).removeClass( 'selected' );
                         $( this ).addClass( 'selected' );
-                        /*nectar addition*/
-                        $(this).parent().addClass( 'activated');
-                        /*nectar addition end*/
                         $( '.checkbox-input', parent ).val( 1 ).trigger('change');
 
                         redux_change( $( '.checkbox-input', parent ) );
@@ -75,9 +72,6 @@
 
                         $( '.cb-enable', parent ).removeClass( 'selected' );
                         $( this ).addClass( 'selected' );
-                        /*nectar addition*/
-                        $(this).parent().removeClass( 'activated');
-                        /*nectar addition end*/
                         $( '.checkbox-input', parent ).val( 0 ).trigger('change');
 
                         redux_change( $( '.checkbox-input', parent ) );

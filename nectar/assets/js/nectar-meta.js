@@ -7,81 +7,55 @@ jQuery(document).ready(function($){
 	
 	$('#post-formats-select input').change(checkFormat);
 	$('.wp-post-format-ui .post-format-options > a').click(checkFormat);
-	
-	$('body.post-type-post').on('change','.components-panel .editor-post-format select',checkFormat); 
-	
+	 
 	function checkFormat(){
+		var format = $('#post-formats-select input:checked').attr('value');
 		
-		//gutenberg
-		if($('.post-type-post .components-panel .editor-post-format select').length > 0) {
-			var format = $('.post-type-post .components-panel .editor-post-format select').val();
-			
-			$('#normal-sortables [id*="nectar-metabox-post-"]').hide();
+		// For < WP 3.6
+		//only run on the posts page
+		if(typeof format != 'undefined'){
 			
 			if(format == 'gallery'){
-				$('#nectar-metabox-post-gallery').stop(true,true).fadeIn(500);
-			} else if(format == 'video') {
-				$('#nectar-metabox-post-video').stop(true,true).fadeIn(500);
-			}	else if(format == 'quote') {
-				$('#nectar-metabox-post-quote').stop(true,true).fadeIn(500);
-			} else if(format == 'link') {
-				$('#nectar-metabox-post-link').stop(true,true).fadeIn(500);
-			} else if(format == 'audio') {
-				$('#nectar-metabox-post-audio').stop(true,true).fadeIn(500);
+				$('#poststuff div[id$=slide][id^=post]').stop(true,true).fadeIn(500);
 			}
 			
-		} else {
-				
-				var format = $('#post-formats-select input:checked').attr('value');
-				
-				// For < WP 3.6
-				//only run on the posts page
-				if(typeof format != 'undefined'){
-					
-					if(format == 'gallery'){
-						$('#poststuff div[id$=slide][id^=post]').stop(true,true).fadeIn(500);
-					}
-					
-					else {
-						$('#poststuff div[id$=slide][id^=post]').stop(true,true).fadeOut(500);
-					}
-					
-					$('#post-body div[id^=nectar-metabox-post-]').hide();
-					$('#post-body #nectar-metabox-post-'+format+'').stop(true,true).fadeIn(500);
-					
-					
-					if(format == 'link'){
-						$('#poststuff #nectar-metabox-page-header').stop(true,true).fadeOut(500);
-					} else {
-						$('#poststuff #nectar-metabox-page-header').stop(true,true).fadeIn(500);
-					}
-					
-					$('#poststuff #nectar-metabox-post-config').stop(true,true).fadeIn(500);
+			else {
+				$('#poststuff div[id$=slide][id^=post]').stop(true,true).fadeOut(500);
+			}
+			
+			$('#post-body div[id^=nectar-metabox-post-]').hide();
+			$('#post-body #nectar-metabox-post-'+format+'').stop(true,true).fadeIn(500);
+			
+			
+			if(format == 'link'){
+				$('#poststuff #nectar-metabox-page-header').stop(true,true).fadeOut(500);
+			} else {
+				$('#poststuff #nectar-metabox-page-header').stop(true,true).fadeIn(500);
+			}
+			
+			$('#poststuff #nectar-metabox-post-config').stop(true,true).fadeIn(500);
+		}
+		
+		// >= WP 3.6 
+		else {
+			var format = $(this).attr('data-wp-format');
+			
+			if( typeof format == 'undefined' && $('a[data-wp-format="gallery"]').hasClass('active')){
+				format = $('a[data-wp-format="gallery"]').attr('data-wp-format');
+			}
+			
+			if(typeof format != 'undefined'){
+			
+				if(format == 'gallery'){
+					$('#nectar-metabox-post-gallery').stop(true,true).fadeIn(500);
 				}
 				
-				// >= WP 3.6 
 				else {
-					var format = $(this).attr('data-wp-format');
-					
-					if( typeof format == 'undefined' && $('a[data-wp-format="gallery"]').hasClass('active')){
-						format = $('a[data-wp-format="gallery"]').attr('data-wp-format');
-					}
-					
-					if(typeof format != 'undefined'){
-					
-						if(format == 'gallery'){
-							$('#nectar-metabox-post-gallery').stop(true,true).fadeIn(500);
-						}
-						
-						else {
-							$('#nectar-metabox-post-gallery').stop(true,true).fadeOut(500);
-						}
-						
-					}
-					
+					$('#nectar-metabox-post-gallery').stop(true,true).fadeOut(500);
 				}
 				
-		} //non gutenberg
+			}
+		}
 	
 	}
 	 
@@ -155,39 +129,15 @@ jQuery(document).ready(function($){
 	/*----------------------------------------------------------------------------------*/
 	
 	function portfolioDisplaySettings(){
-		//gutenberg
-		if($('.post-type-page .components-panel .editor-page-attributes__template select').length > 0) {
-
-			if($('.post-type-page .components-panel .editor-page-attributes__template select').val() == 'template-portfolio.php'){
-				$('#nectar-metabox-portfolio-display').show();
-			} else {
-				$('#nectar-metabox-portfolio-display').hide();
-			}
-			
+		if($('select#page_template').val() == 'template-portfolio.php'){
+			$('#nectar-metabox-portfolio-display').show();
 		} else {
-			
-			if($('select#page_template').val() == 'template-portfolio.php'){
-				$('#nectar-metabox-portfolio-display').show();
-			} else {
-				$('#nectar-metabox-portfolio-display').hide();
-			}
-			
-		} //non gutenberg
+			$('#nectar-metabox-portfolio-display').hide();
+		}
 	}
 	
-	setTimeout(function(){
-		
-
-		//gutenberg
-		if($('.post-type-page .components-panel .editor-page-attributes__template select').length > 0) {
-			$('.post-type-page .components-panel .editor-page-attributes__template select').change(portfolioDisplaySettings);
-		} else {
-			$('select#page_template').change(portfolioDisplaySettings);
-		} //non gutenberg
-		
-		portfolioDisplaySettings();
-	
-	},200);
+	$('select#page_template').change(portfolioDisplaySettings);
+	portfolioDisplaySettings();
 	
     
     /*----------------------------------------------------------------------------------*/
@@ -234,7 +184,35 @@ jQuery(document).ready(function($){
     }
     toggleParallaxOption();
     
+    
+    /*----------------------------------------------------------------------------------*/
+    /*	Only show social options when using applicable layout
+	/*----------------------------------------------------------------------------------*/
+    function toggleSocialOptions(){
+    	if($('select#header_layout').length > 0 && $('select#header_layout').val() == 'header_with_secondary' ){
+    		$('#enable_social_in_header').parents('tr').show();
+    		
+    		if($('input#enable_social_in_header[type="checkbox"]').is(':checked')){
+    			$('#enable_social_in_header').parents('tr').nextAll('tr').show();
+    		}
+    	} else {
+    		$('#enable_social_in_header').parents('tr').hide();
+    		$('#enable_social_in_header').parents('tr').nextAll('tr').hide();
+    	}
+    }
 
+    //toggleSocialOptions();
+
+ 
+    $('select#header_layout').change(function(){
+    	// toggleSocialOptions();
+    });
+    
+    
+    
+    
+    
+    
     /*----------------------------------------------------------------------------------*/
 	/*	Take care of the unnecessary buttons on the slider post type edit page
 	/*----------------------------------------------------------------------------------*/
@@ -258,13 +236,13 @@ jQuery(document).ready(function($){
     	$active = $('label[for=_nectar_slider_bg_type]').parents('tr').find('.buttonset .ui-state-active').attr('for');
     	if($active == 'nectar_meta_video_bg'){
     		
-    		 $('a[rel-id=_nectar_media_upload_mp4], a[rel-id=_nectar_media_upload_webm], a[rel-id=_nectar_media_upload_ogv], a[rel-id=_nectar_slider_preview_image], label[for=_nectar_slider_slide_bg_alignment], label[for="_nectar_slider_video_muted"], #_nectar_header_title, #_nectar_header_subtitle, .nectar_page_header_alignment, label[for="_nectar_header_bg_color"], #_nectar_page_header_bg_alignment').parents('tr').fadeIn();
+    		 $('a[rel-id=_nectar_media_upload_mp4], a[rel-id=_nectar_media_upload_webm], a[rel-id=_nectar_media_upload_ogv], a[rel-id=_nectar_slider_preview_image], label[for=_nectar_slider_slide_bg_alignment], #_nectar_header_title, #_nectar_header_subtitle, .nectar_page_header_alignment, label[for="_nectar_header_bg_color"], #_nectar_page_header_bg_alignment').parents('tr').fadeIn();
     		 $('a[rel-id=_nectar_slider_image], #nectar_slider_canvas_shape, label[for=_nectar_header_bg], #_nectar_particle_rotation_timing, #_nectar_particle_disable_explosion').parents('tr').hide();
     		 $('#_nectar_header_parallax').parents('tr').show();
     	} else if($active == 'nectar_meta_no_bg') {
     		
     		 $('a[rel-id=_nectar_slider_image]').parents('tr').fadeIn();
-    		 $('a[rel-id=_nectar_media_upload_mp4], a[rel-id=_nectar_media_upload_ogv], a[rel-id=_nectar_media_upload_webm], a[rel-id=_nectar_slider_preview_image], label[for="_nectar_slider_video_muted"], #_nectar_particle_rotation_timing, #_nectar_particle_disable_explosion').parents('tr').hide();
+    		 $('a[rel-id=_nectar_media_upload_mp4], a[rel-id=_nectar_media_upload_ogv], a[rel-id=_nectar_media_upload_webm], a[rel-id=_nectar_slider_preview_image], #_nectar_particle_rotation_timing, #_nectar_particle_disable_explosion').parents('tr').hide();
     		 $('a[rel-id=_nectar_slider_image], label[for=_nectar_slider_slide_bg_alignment]').parents('tr').hide();
     		 if($('#_nectar_header_bg_color').val().length == 0 && $('#_nectar_header_bg').val().length == 0) $('#_nectar_header_parallax').parents('tr').hide();
     	} else if($active == 'nectar_meta_particle_bg') {
@@ -275,7 +253,7 @@ jQuery(document).ready(function($){
     	} else {
     		
     		 $('a[rel-id=_nectar_slider_image], label[for=_nectar_slider_slide_bg_alignment],a[rel-id=_nectar_header_bg], #_nectar_header_title, #_nectar_header_subtitle, .nectar_page_header_alignment, label[for="_nectar_header_bg_color"], #_nectar_page_header_bg_alignment').parents('tr').fadeIn();
-    		 $('a[rel-id=_nectar_media_upload_mp4], a[rel-id=_nectar_media_upload_ogv], a[rel-id=_nectar_media_upload_webm], a[rel-id=_nectar_slider_preview_image], label[for="_nectar_slider_video_muted"], #nectar_slider_canvas_shape, #_nectar_particle_rotation_timing, #_nectar_particle_disable_explosion').parents('tr').hide();
+    		 $('a[rel-id=_nectar_media_upload_mp4], a[rel-id=_nectar_media_upload_ogv], a[rel-id=_nectar_media_upload_webm], a[rel-id=_nectar_slider_preview_image], #nectar_slider_canvas_shape, #_nectar_particle_rotation_timing, #_nectar_particle_disable_explosion').parents('tr').hide();
     		 if($('#_nectar_header_bg_color').length > 0 && $('#_nectar_header_bg_color').val().length == 0 && $('#_nectar_header_bg').val().length == 0) $('#_nectar_header_parallax').parents('tr').hide();
     	}
     }
@@ -324,10 +302,6 @@ jQuery(document).ready(function($){
     		$('#_nectar_header_parallax').removeAttr('checked');
     		$('input#_nectar_header_fullscreen').attr('checked','checked');
     		$('input#_nectar_header_bg_height').parents('tr').hide();
-				
-				$('#_nectar_header_parallax').parents('.switch-options.salient').find( ".cb-disable" ).trigger('click');
-				$('input#_nectar_header_fullscreen').parents('.switch-options.salient').find( ".cb-enable" ).trigger('click');
-				
     	} 
     }
     $('#_nectar_header_box_roll').click(boxRoll);
@@ -335,7 +309,6 @@ jQuery(document).ready(function($){
     function parallaxHeader() {
     	if($('#_nectar_header_parallax').attr('checked') == 'checked') {
     		$('input#_nectar_header_box_roll').removeAttr('checked');
-				$('#_nectar_header_box_roll').parents('.switch-options.salient').find( ".cb-disable" ).trigger('click');
     	} 
     }
     $('#_nectar_header_parallax').click(parallaxHeader);
@@ -363,6 +336,7 @@ jQuery(document).ready(function($){
     	 checkButtonStyle();
     });
     
+    checkButtonStyle();
     
     
     //portfolio full width layout
@@ -425,15 +399,7 @@ jQuery(document).ready(function($){
 			    }
 			    $('#nectar-metabox-portfolio-video, #nectar-metabox-page-header, .portfolio_vc_wrap').stop(true,true).slideDown(500);
 			    
-			    if($('.composer-switch:not(.vc-aspect-hidden).vc_backend-status').length > 0) {
-			    	$('#wpb_visual_composer:not(.vc-aspect-hidden)').fadeIn(500);
-			    }
-			   
-			    if($('.composer-switch.vc_backend-status').length == 0) {
-			    	$('#nectar-metabox-portfolio-extra').fadeIn(500);
-			    }
-			    
-			    $('.composer-switch:not(.vc-aspect-hidden)').fadeIn(500);
+			    $('.composer-switch:not(.vc-aspect-hidden),  #wpb_visual_composer:not(.vc-aspect-hidden), #nectar-metabox-portfolio-extra:not(.vc-aspect-hidden)').fadeIn(500);
 
 		    	$('#nectar-metabox-project-configuration tr').each(function(){
 		    		if($(this).find('label').attr('for') != '_nectar_portfolio_custom_grid_item' && $(this).find('label').attr('for') != '_nectar_portfolio_custom_grid_item_content' && $(this).find('label').attr('for') != '_portfolio_item_masonry_sizing' 
@@ -452,19 +418,15 @@ jQuery(document).ready(function($){
     }
     
     function checkVCVis(){
-    	
-    	if($('#nectar-metabox-project-configuration ._nectar_portfolio_custom_grid_item .ui-state-active[for]').length > 0 && $('#nectar-metabox-project-configuration ._nectar_portfolio_custom_grid_item .ui-state-active').attr('for') == 'nectar_meta_on') {
-   
-	    	if($('#nectar-metabox-portfolio-extra').css('display') == 'none') {
-	    		$('.composer-switch,  #wpb_visual_composer').removeClass('vc-aspect-hidden');
-	    		$('#nectar-metabox-portfolio-extra').addClass('vc-aspect-hidden');
-	    		$('.composer-switch,  #wpb_visual_composer').hide();
-	    	}
-	    	else { 
-	    		$('#nectar-metabox-portfolio-extra').removeClass('vc-aspect-hidden');
-	    		$('.composer-switch,  #wpb_visual_composer').addClass('vc-aspect-hidden');
-	    		$('#nectar-metabox-portfolio-extra').hide();
-	    	}
+    	if($('#nectar-metabox-portfolio-extra').css('display') == 'none') {
+    		$('.composer-switch,  #wpb_visual_composer').removeClass('vc-aspect-hidden');
+    		$('#nectar-metabox-portfolio-extra').addClass('vc-aspect-hidden');
+    		$('.composer-switch,  #wpb_visual_composer').hide();
+    	}
+    	else { 
+    		$('#nectar-metabox-portfolio-extra').removeClass('vc-aspect-hidden');
+    		$('.composer-switch,  #wpb_visual_composer').addClass('vc-aspect-hidden');
+    		$('#nectar-metabox-portfolio-extra').hide();
     	}
     }
  
@@ -634,94 +596,6 @@ jQuery(document).ready(function($){
 
      }
      $('._nectar_full_screen_rows, select[name="nectar_meta[_nectar_full_screen_rows_animation]"]').change(fullScreenRows);
-
-
-     //salient studio scrolling pointer events
-     if($('.vc_edit-form-tab[data-tab="default_templates"] > .vc_col-sm-12').length > 0) {
-			 
-     var studioScrollTimer;
-     var $studioScrollPanel = $('.vc_edit-form-tab[data-tab="default_templates"] > .vc_col-sm-12');
-			 /*
-			$studioScrollPanel.on('scroll',function(){
-
-				 clearTimeout(studioScrollTimer);
-				  if(!$studioScrollPanel.hasClass('nectar-disable-hover')) {
-				    $studioScrollPanel.addClass('nectar-disable-hover')
-				  }
-				  
-				  studioScrollTimer = setTimeout(function(){
-				    $studioScrollPanel.removeClass('nectar-disable-hover')
-				  },400);
-			}); */
-	}
-
-
-	//radio image vc param
-	$("body").on('change','.n_radio_image_val',function(){
-		
-		var group_id = $(this).parents('.nectar-radio-image').data("grp-id");
-		$("#nectar-radio-image-"+group_id).val($(this).val());
-	});
-	
-	
-	//metabox switch 
-	
-	////checkbox
-		$('body').on('click','.postbox-container .switch-options.salient .cb-enable, fieldset[id*="salient_redux"] .switch-options .cb-enable',function(){
-
-			var parent = $( this ).parents( '.switch-options' );
-
-			$( '.cb-disable', parent ).removeClass( 'selected' );
-			$( this ).addClass( 'selected' );
-
-			$(this).parent().addClass( 'activated');
-			
-			if($(this).parents('.postbox-container').length > 0) {
-				$( 'input[type="checkbox"]', parent ).val( 'on' ).attr('checked','checked').trigger('change');
-			}
-			
-			//item specific triggers
-			if($(this).parent().find('#_nectar_header_box_roll').length > 0) {
-				boxRoll();
-			}
-			
-			if($(this).parent().find('#_nectar_header_parallax').length > 0) {
-				parallaxHeader();
-			}
-			
-			if($(this).parent().find('#_nectar_header_fullscreen').length > 0) {
-				fullscreenHeight();
-			}
-		
-			
-		});
-		
-		$('body').on('click', '.postbox-container .switch-options.salient .cb-disable, fieldset[id*="salient_redux"] .switch-options .cb-disable', function(){
-			
-			var parent = $( this ).parents( '.switch-options' );
-
-			$( '.cb-enable', parent ).removeClass( 'selected' );
-			$( this ).addClass( 'selected' );
-			/*nectar addition*/
-			$(this).parent().removeClass( 'activated');
-			/*nectar addition end*/
-			if($(this).parents('.postbox-container').length > 0) {
-				$( 'input[type="checkbox"]', parent ).val( 'off' ).removeAttr('checked').trigger('change');
-			}
-			
-			//item specific triggers
-			if($(this).parent().find('#_nectar_header_fullscreen').length > 0) {
-				fullscreenHeight();
-			}
-			
-		});
-		
-		
-		////start activated 
-		$('fieldset[id*="salient_redux"] .switch-options').each(function(){
-			if( $(this).find('.cb-enable.selected').length > 0 ) {
-				$(this).addClass( 'activated');
-			}
-		});
+    
 
 });

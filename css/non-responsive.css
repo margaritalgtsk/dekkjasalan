@@ -90,11 +90,11 @@
 	    left: 20px!important;
 	}
 
-	.post-area.masonry {
+	#post-area.masonry {
 		width: 895px;
 	}
 
-	.post-area.masonry.span_9 {
+	#post-area.masonry.span_9 {
 		width: 660px;
 		margin-right: 10px;
 	}
@@ -103,15 +103,15 @@
 		height: 139px!important;
 	}
 	
-	.post-area.span_9 .masonry-blog-item .jp-jplayer-video {
+	#post-area.span_9 .masonry-blog-item .jp-jplayer-video {
 		height: 154px!important;
 	}
 	
-	.single .post-area.span_12 #author-info {
+	.single #post-area.span_12 #author-info {
 		width: 773px!important;
 	}
 
-	.post-area.masonry.span_9 .masonry-blog-item {
+	#post-area.masonry.span_9 .masonry-blog-item {
 		width: 46.5%;
 	}
 
@@ -221,37 +221,8 @@
 }
 
 
-
-@media only screen and (max-width: 880px) { 
-  body .portfolio-filters-inline.full-width-section:not(.non-fw), 
-  body .portfolio-filters-inline.full-width-content, 
-  body .post-area.full-width-content.standard-minimal, 
-  body .full-width-content.blog-fullwidth-wrap, 
-  body .wpb_row.full-width-content, 
-  body .full-width-content.nectar-shop-outer, 
-  body .page-submenu > .full-width-section, 
-  body .page-submenu .full-width-content, 
-  body .wpb_row.full-width-section .mobile-video-image, 
-  html body .full-width-section .row-bg-wrap, 
-  html body .full-width-section .nectar-parallax-scene, 
-  html body .full-width-section > .nectar-shape-divider-wrap, 
-  html body .full-width-section > .video-color-overlay, 
-  html body[data-aie="zoom-out"] .first-section .row-bg-wrap, 
-  html body[data-aie="long-zoom-out"] .first-section .row-bg-wrap, 
-  html body[data-aie="zoom-out"] .top-level.full-width-section .row-bg-wrap, 
-  html body[data-aie="long-zoom-out"] .top-level.full-width-section .row-bg-wrap, 
-  html body .full-width-section.parallax_section .row-bg-wrap, 
-  html .nectar-slider-wrap[data-full-width="true"] {
-    margin-left: 0;
-    left: 0;
-    width: 100%;
-  }
-}
-
-
 @media only screen and (max-width: 1000px) { 
 	
-
 	.container, #portfolio {
 	    width: 880px;
 	}
@@ -347,12 +318,12 @@
 		width: 21.72%!important;
 	}
 	
-	.post-area.full-width-content .masonry-blog-item, .full-width-content .post-area .masonry-blog-item {
+	#post-area.full-width-content .masonry-blog-item, .full-width-content #post-area .masonry-blog-item {
 		width: 18.3%;
 		margin-bottom: 1.8%;
 	}
 	
-	#boxed .post-area.full-width-content .masonry-blog-item, #boxed .full-width-content .post-area .masonry-blog-item {
+	#boxed #post-area.full-width-content .masonry-blog-item, #boxed .full-width-content #post-area .masonry-blog-item {
 	    width: 30.8%;
 	}
 	
@@ -391,7 +362,7 @@
 	}
 	
 	
-	.post-area.full-width-content .masonry-blog-item, .full-width-content .post-area .masonry-blog-item {
+	#post-area.full-width-content .masonry-blog-item, .full-width-content #post-area .masonry-blog-item {
 		width: 22.8%;
 		margin-bottom: 2.3%;
 	}
@@ -401,7 +372,7 @@
 		padding-left: 2.8%!important;
 	}
 	
-	#boxed .post-area.full-width-content .masonry-blog-item, #boxed .full-width-content .post-area .masonry-blog-item {
+	#boxed #post-area.full-width-content .masonry-blog-item, #boxed .full-width-content #post-area .masonry-blog-item {
 	    width: 30.8%;
 	}
 	

@@ -1,6 +1,6 @@
 <?php
     // <input type="radio" value="1" name="_customize-radio-redux_demo[opt-radio]" data-customize-setting-link="redux_demo[opt-color-title]">
-    //return;
+//return;
     /**
      * Redux Framework is free software: you can redistribute it and/or modify
      * it under the terms of the GNU General Public License as published by
@@ -18,12 +18,12 @@
      * @version     0.1.0
      */
 
-    // Exit if accessed directly
+// Exit if accessed directly
     if ( ! defined( 'ABSPATH' ) ) {
         exit;
     }
 
-    // Don't duplicate me!
+// Don't duplicate me!
     if ( ! class_exists( 'ReduxFramework_extension_customizer' ) ) {
 
         /**
@@ -60,6 +60,7 @@
                 $this->parent = $parent;
 
                 $this->upload_dir = ReduxFramework::$_upload_dir . 'advanced-customizer/';
+                $this->upload_url = ReduxFramework::$_upload_url . 'advanced-customizer/';
 
                 //add_action('wp_head', array( $this, '_enqueue_new' ));
                 if ( $parent->args['customizer'] == false ) {
@@ -80,9 +81,10 @@
                     //return;
                 }
 
+
                 if ( empty( $this->_extension_dir ) ) {
                     $this->_extension_dir = trailingslashit( str_replace( '\\', '/', dirname( __FILE__ ) ) );
-                    $this->_extension_url = site_url( str_replace( trailingslashit( str_replace( '\\', '/', ABSPATH ) ), '', $this->_extension_dir ) );
+                    $this->_extension_url = site_url( str_replace( trailingslashit( str_replace( '\\', '/', ABSPATH ) ), '/', $this->_extension_dir ) );
                 }
 
                 self::get_post_values();
@@ -410,6 +412,7 @@
 
                     //print_r($section);
                     //print_r($this->parent->sections[$key+1]);
+                    //echo $key;
                     //exit();
 
 
@@ -491,6 +494,7 @@
                         }
 
                         //$option['id'] = $this->parent->args['opt_name'].'['.$option['id'].']';
+                        //echo $option['id'];
 
                         if ( ! isset( $option['default'] ) ) {
                             $option['default'] = "";
@@ -547,17 +551,13 @@
                         }
 
                         $wp_customize->add_control( new $class_name( $wp_customize, $option['id'], array(
-                            'label'           => $option['title'],
-                            'section'         => $section['id'],
-                            'settings'        => $option['id'],
-                            'type'            => 'redux-' . $option['type'],
-                            'field'           => $option,
-                            'ReduxFramework'  => $this->parent,
-                            'active_callback' => ( isset( $option['required'] ) && class_exists( 'Redux_Customizer_Active_Callback' ) ) ? array(
-                                'Redux_Customizer_Active_Callback',
-                                'evaluate'
-                            ) : '__return_true',
-                            'priority'        => $option['priority'],
+                            'label'          => $option['title'],
+                            'section'        => $section['id'],
+                            'settings'       => $option['id'],
+                            'type'           => 'redux-' . $option['type'],
+                            'field'          => $option,
+                            'ReduxFramework' => $this->parent,
+                            'priority'       => $option['priority'],
                         ) ) );
 
                         $section['fields'][ $skey ]['name'] = $option['id'];
@@ -618,6 +618,7 @@
                 $id = $matches[1][0];
                 echo $option->link();
                 //$link = $option->link();
+                //echo $link;
 
                 $this->parent->_field_input( $this->controls[ $id ] );
                 echo '2';

@@ -19,16 +19,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 $tabs = apply_filters( 'woocommerce_product_tabs', array() );
 
-global $nectar_options;
+global $options;
 
-$tab_style = (!empty($nectar_options['product_tab_position'])) ? $nectar_options['product_tab_position'] : 'default';
-$fullwidth_tabs = (!empty($nectar_options['product_tab_position']) && $nectar_options['product_tab_position'] == 'fullwidth' || !empty($nectar_options['product_tab_position']) && $nectar_options['product_tab_position'] == 'fullwidth_centered') ? true : false;
+$fullwidth_tabs = (!empty($options['product_tab_position']) && $options['product_tab_position'] == 'fullwidth') ? true : false;
 
 if ( ! empty( $tabs ) ) : ?>
 
-	<div class="woocommerce-tabs wc-tabs-wrapper <?php if($fullwidth_tabs == true) echo 'full-width-tabs'; ?>" data-tab-style="<?php echo esc_attr( $tab_style ); ?>">
+	<div class="woocommerce-tabs wc-tabs-wrapper <?php if($fullwidth_tabs == true) echo 'full-width-tabs'; ?>">
 
-		<?php if($fullwidth_tabs == true) echo '<div class="full-width-content" data-tab-style="'. $tab_style .'"> <div class="tab-container container">'; ?>
+		<?php if($fullwidth_tabs == true) echo '<div class="full-width-content"> <div class="tab-container container">'; ?>
 
 			<ul class="tabs">
 				<?php foreach ( $tabs as $key => $tab ) : ?>

@@ -1,8 +1,7 @@
 jQuery(document).ready(function($){
    
-   /*nectar addition - added check to see if input exists on page to not throw js error in customizer */
-   var count = ($('.add-remove-controls input[type=hidden]').length > 0) ? $('.add-remove-controls input[type=hidden]').val() : 1;
-   /*nectar addition end*/ 
+   var count = $('.add-remove-controls input[type=hidden]').val();
+   
    if(count.length == 0) count = 1;
  
    

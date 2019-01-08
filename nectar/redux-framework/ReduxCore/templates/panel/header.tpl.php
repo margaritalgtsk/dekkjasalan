@@ -58,19 +58,17 @@
                         class="redux-dev-mode-notice" style="background-color: #FF001D;"><?php _e( 'FORCED DEV MODE OFF ENABLED', 'redux-framework' ); ?></span>
                 </div>
             
-            <?php } 
-            /* nectar addition */
-            ?>
-            <img src="<?php echo NECTAR_FRAMEWORK_DIRECTORY . 'assets/img/icons/salient.svg'; ?>" height="20px"  alt="salient"/>
-            <h2><?php echo wp_kses_post( $this->parent->args['display_name'] ); ?></h2>
+            <?php } ?>
+			<img src="<?php echo NECTAR_FRAMEWORK_DIRECTORY . 'assets/img/icons/salient.svg'; ?>" height="20px"  alt="salient"/>
+            <h2><?php echo wp_kses_post( str_replace('Theme', '', $this->parent->args['display_name']) ); ?></h2>
 
             <?php if ( ! empty( $this->parent->args['display_version'] ) ) { ?>
                 <span><?php echo wp_kses_post( $this->parent->args['display_version'] ); ?></span>
             <?php } ?>
 
         </div>
-
-        <div class="secondary-header"><h4><?php echo __('Options Panel','salient'); ?></h4></div>
+        
+        <div class="secondary-header"><h4><?php echo __('Options Panel',NECTAR_THEME_NAME); ?></h4></div>
     <?php } ?>
 
     <div class="clear"></div>
